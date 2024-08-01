@@ -4,7 +4,6 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-
 flask = "*"
 sqlalchemy = "*"
 flask-sqlalchemy = "*"
@@ -19,7 +18,7 @@ flask-bcrypt = "*"
 sqlalchemy-serializer = "*"
 shell = "*"
 psycopg2-binary = "*"
-
+itsdangerous = "*"
 
 [dev-packages]
 
