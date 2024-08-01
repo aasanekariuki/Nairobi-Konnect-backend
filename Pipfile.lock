@@ -1,11 +1,7 @@
 {
     "_meta": {
         "hash": {
-
-            "sha256": "20d7f31a3e030b394bb012ace36c0ae9486c19bc710f2faa4eaf2203a977507b"
-
-            "sha256": "fedbd2ab7afd84cf16f128af0619749267b62277b4cb6989ef16d4bef6e4eef2"
-
+            "sha256": "b33ce47dfc353a2a8a07646db6979a2a945a0d9bcef2aad5b33faaecb6d1c196"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -19,7 +15,6 @@
             }
         ]
     },
-
     "default": {
         "alembic": {
             "hashes": [
@@ -287,6 +282,15 @@
             ],
             "markers": "python_version >= '2.6' and python_version not in '3.0, 3.1, 3.2, 3.3'",
             "version": "==1.0.0"
+        },
+        "geoalchemy2": {
+            "hashes": [
+                "sha256:3af0272db927373e74ee3b064cdc9464ba08defdb945c51745db1b841482f5dc",
+                "sha256:546455dc39f5bcdfc5b871e57d3f7546c8a6f798eb364c474200f488ace6fd32"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.7'",
+            "version": "==0.15.2"
         },
         "gevent": {
             "hashes": [
@@ -813,8 +817,5 @@
             "version": "==6.4.post2"
         }
     },
-
-    "default": {},
-
     "develop": {}
 }
