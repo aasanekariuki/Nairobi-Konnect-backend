@@ -19,6 +19,7 @@ sqlalchemy-serializer = "*"
 shell = "*"
 psycopg2-binary = "*"
 geoalchemy2 = "*"
+flask-mail = "*"
 
 [dev-packages]
 

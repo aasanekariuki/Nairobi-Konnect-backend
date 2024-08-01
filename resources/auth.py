@@ -2,9 +2,11 @@ from flask import request, jsonify
 from flask_restful import Resource, reqparse
 from flask_jwt_extended import create_access_token
 from flask_bcrypt import generate_password_hash, check_password_hash
+from flask_mail import Message
 from model import db, User
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 import logging
+from app import mail  
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -20,7 +22,13 @@ def send_verification_email(user_email, token):
     verify_url = f"http://yourdomain.com/verify/{token}"
     subject = "Please verify your email"
     body = f"Click the following link to verify your email: {verify_url}"
-    logger.debug(f"Verification email sent to {user_email}: {verify_url}")
+
+    msg = Message(subject, recipients=[user_email], body=body)
+    try:
+        mail.send(msg)
+        logger.debug(f"Verification email sent to {user_email}: {verify_url}")
+    except Exception as e:
+        logger.error(f"Failed to send email to {user_email}: {str(e)}")
 
 class SignupResource(Resource):
     def __init__(self):
@@ -48,7 +56,6 @@ class SignupResource(Resource):
             db.session.add(new_user)
             db.session.commit()
 
-            # Send verification email
             send_verification_email(data['email'], verification_token)
 
             return {"message": "User registered successfully. Please verify your email.", "status": "success", "user": {"id": new_user.id, "username": new_user.username, "role": new_user.role}}
@@ -77,7 +84,6 @@ class LoginResource(Resource):
             logger.error(f"Error during login: {e}")
             return {"message": "Error during login", "status": "fail", "error": str(e)}, 500
 
-# Email verification endpoint
 class VerifyEmailResource(Resource):
     def get(self, token):
         serializer = URLSafeTimedSerializer(SECRET_KEY)
