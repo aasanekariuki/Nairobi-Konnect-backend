@@ -1,12 +1,10 @@
-from sqlalchemy import MetaData, Time, Date, Point
+from sqlalchemy import MetaData, Time, Date
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy_serializer import SerializerMixin
 from flask_bcrypt import check_password_hash
 
-# initialize metadata
 metadata = MetaData()
-
 db = SQLAlchemy(metadata=metadata)
 
 class User(db.Model, SerializerMixin):
@@ -15,11 +13,11 @@ class User(db.Model, SerializerMixin):
     username = db.Column(db.String, nullable=False, unique=True)
     email = db.Column(db.String, nullable=False, unique=True)
     password_hash = db.Column(db.String, nullable=False)
-    role = db.Column(db.String, nullable=False) 
+    role = db.Column(db.String, nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     is_verified = db.Column(db.Boolean, default=False)
     is_active = db.Column(db.Boolean, default=True)
-    
+
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
@@ -43,10 +41,11 @@ class Bus(db.Model, SerializerMixin):
     operator_id = db.Column(db.Integer, db.ForeignKey('bus_operators.id'))
     bus_number = db.Column(db.String, nullable=False, unique=True)
     seat_capacity = db.Column(db.Integer, nullable=False)
-    current_location = db.Column(Point)
+    latitude = db.Column(db.Float, nullable=True)  # Store latitude as float
+    longitude = db.Column(db.Float, nullable=True)  # Store longitude as float
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
-    
+
     operator = db.relationship('BusOperator', back_populates='buses')
     schedules = db.relationship('Schedule', back_populates='bus')
 
@@ -58,7 +57,7 @@ class Route(db.Model, SerializerMixin):
     description = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
-    
+
     schedules = db.relationship('Schedule', back_populates='route')
 
 class Schedule(db.Model, SerializerMixin):
@@ -72,7 +71,7 @@ class Schedule(db.Model, SerializerMixin):
     available_seats = db.Column(db.Integer, nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
-    
+
     bus = db.relationship('Bus', back_populates='schedules')
     route = db.relationship('Route', back_populates='schedules')
     bookings = db.relationship('Booking', back_populates='schedule')
@@ -86,7 +85,7 @@ class Booking(db.Model, SerializerMixin):
     payment_status = db.Column(db.Boolean, default=False)
     ticket_number = db.Column(db.String, nullable=False, unique=True)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
-    
+
     user = db.relationship('User', back_populates='bookings')
     schedule = db.relationship('Schedule', back_populates='bookings')
 
@@ -99,9 +98,10 @@ class Product(db.Model, SerializerMixin):
     available_quantity = db.Column(db.Integer, nullable=False)
     seller_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
-    location = db.Column(Point)
+    latitude = db.Column(db.Float, nullable=True)  # Store latitude as float
+    longitude = db.Column(db.Float, nullable=True)  # Store longitude as float
     shop_name = db.Column(db.String, nullable=False)
-    
+
     seller = db.relationship('User', back_populates='products')
     order_items = db.relationship('OrderItem', back_populates='product')
 
@@ -112,7 +112,7 @@ class Order(db.Model, SerializerMixin):
     total_price = db.Column(db.Float, nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     status = db.Column(db.String, default='pending')
-    
+
     buyer = db.relationship('User', back_populates='orders')
     order_items = db.relationship('OrderItem', back_populates='order')
 
@@ -123,7 +123,7 @@ class OrderItem(db.Model, SerializerMixin):
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'))
     quantity = db.Column(db.Integer, nullable=False)
     unit_price = db.Column(db.Float, nullable=False)
-    
+
     order = db.relationship('Order', back_populates='order_items')
     product = db.relationship('Product', back_populates='order_items')
 
@@ -136,7 +136,7 @@ class Comment(db.Model, SerializerMixin):
     rating = db.Column(db.Integer, nullable=False)
     comment = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
-    
+
     user = db.relationship('User', back_populates='comments')
 
 class ForumPost(db.Model, SerializerMixin):
@@ -146,7 +146,7 @@ class ForumPost(db.Model, SerializerMixin):
     title = db.Column(db.String, nullable=False)
     content = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
-    
+
     user = db.relationship('User', back_populates='forum_posts')
     forum_comments = db.relationship('ForumComment', back_populates='post')
 
@@ -157,6 +157,6 @@ class ForumComment(db.Model, SerializerMixin):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     comment = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
-    
+
     post = db.relationship('ForumPost', back_populates='forum_comments')
     user = db.relationship('User', back_populates='forum_comments')
