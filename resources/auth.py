@@ -6,7 +6,7 @@ from flask_mail import Message
 from model import db, User
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 import logging
-from app import mail  
+# from app import mail  
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -100,4 +100,4 @@ class VerifyEmailResource(Resource):
 
         user.is_verified = True
         db.session.commit()
-        return {"message": "Email verified successfully."}, 200
+        return {"message": "Email verified successfully."}, 200 
