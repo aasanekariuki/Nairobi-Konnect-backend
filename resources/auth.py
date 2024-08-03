@@ -11,7 +11,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-SECRET_KEY = 'YOUR_SECRET_KEY'
+SECRET_KEY = 'Nairobi_konnect_key'
 EMAIL_CONFIRM_SALT = 'email-confirm-salt'
 
 def generate_verification_token(email):
