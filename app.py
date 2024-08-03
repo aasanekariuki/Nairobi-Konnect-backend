@@ -13,7 +13,7 @@ from resources.auth import  SignupResource, LoginResource, VerifyEmailResource
 
 
 app = Flask(__name__)
-app.config['JWT_SECRET_KEY'] = 'your_secret_key_here'
+app.config['JWT_SECRET_KEY'] = 'Nairobi_konnect_key'
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=30)
 jwt_manager = JWTManager(app)
 
@@ -21,8 +21,8 @@ jwt_manager = JWTManager(app)
 #app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI') 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'YOUR_SECRET_KEY'
-app.config['JWT_SECRET_KEY'] = 'YOUR_JWT_SECRET_KEY'
+app.config['SECRET_KEY'] = 'Nairobi_konnect_key'
+app.config['JWT_SECRET_KEY'] = 'Nairobi_konnect_key'
 app.config['MAIL_SERVER'] = 'smtp.example.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
