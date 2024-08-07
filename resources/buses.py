@@ -1,7 +1,7 @@
 from flask import request
 from flask_restful import Resource, reqparse
-from models import db, Bus, Booking, Route, Schedule
-from datetime import datetime, time
+from model import db, Bus, Booking
+# from datetime import datetime, time
 
 class BusResource(Resource):
     def get(self):
