@@ -6,6 +6,8 @@ from flask_restful import Api
 from flask_jwt_extended import JWTManager
 from  datetime import timedelta
 from flask_mail import Mail
+from flask_mpesa import MpesaAPI
+
 
 from model import db 
 from resources.user import  DriverResource, PassengerResource, SellerResource, BuyerResource
@@ -16,6 +18,8 @@ app = Flask(__name__)
 app.config['JWT_SECRET_KEY'] = 'Nairobi_konnect_key'
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=30)
 jwt_manager = JWTManager(app)
+mpesa_api=MpesaAPI(app)
+
 
 
 #app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI') 
@@ -28,6 +32,9 @@ app.config['MAIL_USE_SSL'] = False
 app.config['MAIL_USERNAME'] = 'your-email@example.com'
 app.config['MAIL_PASSWORD'] = 'your-email-password'
 app.config['MAIL_DEFAULT_SENDER'] = 'your-email@example.com'
+app.config["API_ENVIRONMENT"] = "sandbox" #sandbox or production
+app.config["APP_KEY"] = "..." # App_key from developers portal
+app.config["APP_SECRET"] = "..." #App_Secret from developers portal
 
 
 db.init_app(app)
