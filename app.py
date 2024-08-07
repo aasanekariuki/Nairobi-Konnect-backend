@@ -10,6 +10,9 @@ from flask_mail import Mail
 from model import db 
 from resources.user import  DriverResource, PassengerResource, SellerResource, BuyerResource
 from resources.auth import  SignupResource, LoginResource, VerifyEmailResource
+from resources.buses import BusResource, BookingResource, RouteResource, ScheduleResource
+from resources.reviews import ReviewRescource
+from resources.products import ProductResource
 
 
 app = Flask(__name__)
@@ -47,6 +50,12 @@ api.add_resource(BuyerResource, '/buyers')
 api.add_resource(SignupResource, '/signup')
 api.add_resource(LoginResource, '/login')
 api.add_resource(VerifyEmailResource, '/verify/<string:token>')
+api.add_resource(BusResource, '/buses', '/buses/<int:id>')
+api.add_resource(BookingResource, '/bookings', '/bookings/<int:id>')
+api.add_resource(RouteResource, '/routes', '/routes/<int:id>')
+api.add_resource(ScheduleResource, '/schedules', '/schedules/<int:id>')
+api.add_resource(ReviewRescource, '/reviews', '/reviews/<int:id>')
+api.add_resource(ProductResource, '/products', '/products/<int:product_id>')
 
 @app.before_request
 def handle_preflight():
