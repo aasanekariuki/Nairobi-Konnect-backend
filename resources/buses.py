@@ -1,7 +1,7 @@
 from flask import request
 from flask_restful import Resource, reqparse
-from model import db, Bus, Booking
-# from datetime import datetime, time
+from model import db, Bus, Booking, Route, Schedule
+from datetime import datetime, time
 
 class BusResource(Resource):
     def get(self):
@@ -65,32 +65,68 @@ class BookingResource(Resource):
 
         return {"message": "Booking deleted successfully"}, 200
 
-# class RouteResource(Resource):
-#     def get(self):
-#         routes = Route.query.all()
-#         return [route.to_dict() for route in routes], 200
+class RouteResource(Resource):
+    def get(self):
+        routes = Route.query.all()
+        return [route.to_dict() for route in routes], 200
     
-#     def post(self):
-#         parser = reqparse.RequestParser()
-#         parser.add_argument('origin', type=str, required=True, help="Origin cannot be blank!")
-#         parser.add_argument('destination', type=str, required=True, help="Destination cannot be blank!")
-#         parser.add_argument('distance', type=float, required=True, help="Distance cannot be blank!")
-#         args = parser.parse_args()
+    def post(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('origin', type=str, required=True, help="Origin cannot be blank!")
+        parser.add_argument('destination', type=str, required=True, help="Destination cannot be blank!")
+        parser.add_argument('distance', type=float, required=True, help="Distance cannot be blank!")
+        args = parser.parse_args()
 
-#         new_route = Route(
-#             origin = args['origin'],
-#             destination = args['destination'],
-#             distance = args['distance']
-#         )
+        new_route = Route(
+            origin = args['origin'],
+            destination = args['destination'],
+            distance = args['distance']
+        )
 
-#         db.session.add(new_route)
-#         db.session.commit()
+        db.session.add(new_route)
+        db.session.commit()
 
-#         return new_route.to_dict(), 201
+        return new_route.to_dict(), 201
     
-#     def delete(self, id):
-#         route = Route.query.get_or_404(id)
-#         db.session.delete(route)
-#         db.session.commit()
+    def delete(self, id):
+        route = Route.query.get_or_404(id)
+        db.session.delete(route)
+        db.session.commit()
 
-#         return {"message": "Route deleted successfully"}, 200
+        return {"message": "Route deleted successfully"}, 200
+
+class ScheduleResource(Resource):
+    def get(self):
+        schedules = Schedule.query.all()
+        return [schedule.to_dict() for schedule in schedules], 200
+
+    def post(self):
+        data = request.get_json()
+
+        
+        try:
+            departure_time = datetime.strptime(data['departure_time'], '%H:%M:%S').time()
+            arrival_time = datetime.strptime(data['arrival_time'], '%H:%M:%S').time()
+            schedule_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+        except ValueError:
+            return {"message": "Invalid time format. Use HH:MM:SS for times and YYYY-MM-DD for date."}, 400
+
+        new_schedule = Schedule(
+            bus_id=data['bus_id'],
+            route_id=data['route_id'],
+            departure_time=departure_time,
+            arrival_time=arrival_time,
+            date=schedule_date,
+            available_seats=data['available_seats']
+        )
+        db.session.add(new_schedule)
+        db.session.commit()
+        return new_schedule.to_dict(), 201
+    
+    def delete(self, id):
+        schedule = Schedule.query.get_or_404(id)
+        db.session.delete(schedule)
+        db.session.commit()
+        return {"message": "Schedule delete successfully"}
+
+    
