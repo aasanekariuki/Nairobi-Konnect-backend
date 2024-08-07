@@ -65,32 +65,32 @@ class BookingResource(Resource):
 
         return {"message": "Booking deleted successfully"}, 200
 
-class RouteResource(Resource):
-    def get(self):
-        routes = Route.query.all()
-        return [route.to_dict() for route in routes], 200
+# class RouteResource(Resource):
+#     def get(self):
+#         routes = Route.query.all()
+#         return [route.to_dict() for route in routes], 200
     
-    def post(self):
-        parser = reqparse.RequestParser()
-        parser.add_argument('origin', type=str, required=True, help="Origin cannot be blank!")
-        parser.add_argument('destination', type=str, required=True, help="Destination cannot be blank!")
-        parser.add_argument('distance', type=float, required=True, help="Distance cannot be blank!")
-        args = parser.parse_args()
+#     def post(self):
+#         parser = reqparse.RequestParser()
+#         parser.add_argument('origin', type=str, required=True, help="Origin cannot be blank!")
+#         parser.add_argument('destination', type=str, required=True, help="Destination cannot be blank!")
+#         parser.add_argument('distance', type=float, required=True, help="Distance cannot be blank!")
+#         args = parser.parse_args()
 
-        new_route = Route(
-            origin = args['origin'],
-            destination = args['destination'],
-            distance = args['distance']
-        )
+#         new_route = Route(
+#             origin = args['origin'],
+#             destination = args['destination'],
+#             distance = args['distance']
+#         )
 
-        db.session.add(new_route)
-        db.session.commit()
+#         db.session.add(new_route)
+#         db.session.commit()
 
-        return new_route.to_dict(), 201
+#         return new_route.to_dict(), 201
     
-    def delete(self, id):
-        route = Route.query.get_or_404(id)
-        db.session.delete(route)
-        db.session.commit()
+#     def delete(self, id):
+#         route = Route.query.get_or_404(id)
+#         db.session.delete(route)
+#         db.session.commit()
 
-        return {"message": "Route deleted successfully"}, 200
+#         return {"message": "Route deleted successfully"}, 200
