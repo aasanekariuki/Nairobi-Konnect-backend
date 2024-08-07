@@ -1,13 +1,38 @@
 from flask import request, jsonify
 from flask_restful import Resource, reqparse
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from model import db, User, Product, Order, OrderItem, Bus, Route
+from model import db, User, Product, Order, OrderItem, Bus, Route,Driver, Passenger, Seller
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+user_parser = reqparse.RequestParser()
+user_parser.add_argument('username', type=str, required=True, help="Username cannot be blank")
+user_parser.add_argument('email', type=str, required=True, help="Email cannot be blank")
+user_parser.add_argument('password', type=str, required=True, help="Password cannot be blank")
+user_parser.add_argument('role', type=str, required=True, help="Role cannot be blank")
+
+
 class DriverResource(Resource):
+    def get(self):
+        try:
+            drivers = Driver.query.all()
+            return [driver.to_dict() for driver in drivers], 200
+        except Exception as e:
+            return {'message': str(e)}, 500
+
+    def post(self):
+        args = user_parser.parse_args()
+        try:
+            driver = Driver(name=args['username'], contact_info=args['email'])
+            db.session.add(driver)
+            db.session.commit()
+            return driver.to_dict(), 201
+        except Exception as e:
+            db.session.rollback()
+            return {'message': str(e)}, 500
+
     @jwt_required()
     def post(self):
         """Add a new route for the bus"""
@@ -75,6 +100,23 @@ class DriverResource(Resource):
             return {"message": "Error retrieving tickets", "status": "fail", "error": str(e)}, 500
 
 class PassengerResource(Resource):
+    def get(self):
+        try:
+            passengers = Passenger.query.all()
+            return [passenger.to_dict() for passenger in passengers], 200
+        except Exception as e:
+            return {'message': str(e)}, 500
+
+    def post(self):
+        args = user_parser.parse_args()
+        try:
+            passenger = Passenger(user_id=args['username'], contact_info=args['email'])
+            db.session.add(passenger)
+            db.session.commit()
+            return passenger.to_dict(), 201
+        except Exception as e:
+            db.session.rollback()
+            return {'message': str(e)}, 500
     @jwt_required()
     def get(self):
         """View available buses and book tickets"""
@@ -104,6 +146,24 @@ class PassengerResource(Resource):
             return {"message": "Error retrieving routes", "status": "fail", "error": str(e)}, 500
 
 class SellerResource(Resource):
+    def get(self):
+        try:
+            sellers = Seller.query.all()
+            return [seller.to_dict() for seller in sellers], 200
+        except Exception as e:
+            return {'message': str(e)}, 500
+
+    def post(self):
+        args = user_parser.parse_args()
+        try:
+            seller = Seller(user_id=args['username'], shop_name=args['email'], location=args.get('location'), contact_info=args['email'])
+            db.session.add(seller)
+            db.session.commit()
+            return seller.to_dict(), 201
+        except Exception as e:
+            db.session.rollback()
+            return {'message': str(e)}, 500
+
     @jwt_required()
     def post(self):
         """Add or update product stock"""
@@ -173,6 +233,13 @@ class SellerResource(Resource):
             return {"message": "Error retrieving orders", "status": "fail", "error": str(e)}, 500
 
 class BuyerResource(Resource):
+    
+    def get(self):
+        try:
+            buyers = User.query.filter_by(role='buyer').all()
+            return [buyer.to_dict() for buyer in buyers], 200
+        except Exception as e:
+            return {'message': str(e)}, 500
     @jwt_required()
     def post(self):
         """Place an order for products"""

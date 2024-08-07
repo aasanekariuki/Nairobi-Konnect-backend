@@ -1,6 +1,5 @@
-from sqlalchemy import Integer, MetaData,Time, Date
+from sqlalchemy import  MetaData, Time, Date
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy_serializer import SerializerMixin
 from flask_bcrypt import check_password_hash
 
@@ -19,34 +18,40 @@ class User(db.Model, SerializerMixin):
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     is_verified = db.Column(db.Boolean, default=False)
     is_active = db.Column(db.Boolean, default=True)
-    verification_token = db.Column(db.String, nullable=True)  # Added this line
-    
+    verification_token = db.Column(db.String, nullable=True)
+    products = db.relationship('Product', backref='seller', lazy=True)
+
+
+
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
     bookings = db.relationship('Booking', back_populates='user')
-    products = db.relationship('Product', back_populates='seller')
+    products = db.relationship('Product', back_populates='user')
     orders = db.relationship('Order', back_populates='buyer')
     comments = db.relationship('Comment', back_populates='user')
     reviews = db.relationship('Review', back_populates='user')
-    
-class BusOperator(db.Model, SerializerMixin):
-    __tablename__ = 'bus_operators'
+    seller = db.relationship('Seller', back_populates='user', uselist=False)
+    passenger = db.relationship('Passenger', back_populates='user', uselist=False)
+
+class Driver(db.Model, SerializerMixin):
+    __tablename__ = 'drivers'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
     contact_info = db.Column(db.Text)
-    buses = db.relationship('Bus', back_populates='operator')
+    buses = db.relationship('Bus', back_populates='driver')
 
 class Bus(db.Model, SerializerMixin):
     __tablename__ = 'buses'
     id = db.Column(db.Integer, primary_key=True)
-    operator_id = db.Column(db.Integer, db.ForeignKey('bus_operators.id'))
+    driver_id = db.Column(db.Integer, db.ForeignKey('drivers.id'))
     bus_number = db.Column(db.String, nullable=False, unique=True)
     seat_capacity = db.Column(db.Integer, nullable=False)
-    current_location = db.Column(Integer)
+    current_location = db.Column(db.Integer)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
-    operator = db.relationship('BusOperator', back_populates='buses')
+    
+    driver = db.relationship('Driver', back_populates='buses')
     schedules = db.relationship('Schedule', back_populates='bus')
 
 class Route(db.Model, SerializerMixin):
@@ -57,6 +62,7 @@ class Route(db.Model, SerializerMixin):
     description = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    
     schedules = db.relationship('Schedule', back_populates='route')
 
 class Schedule(db.Model, SerializerMixin):
@@ -85,8 +91,8 @@ class Booking(db.Model, SerializerMixin):
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     user = db.relationship('User', back_populates='bookings')
     schedule = db.relationship('Schedule', back_populates='bookings')
-    payments = db.relationship('Payment', back_populates='booking')  # Relationship added here
-    
+    payments = db.relationship('Payment', back_populates='booking')
+
 class Product(db.Model, SerializerMixin):
     __tablename__ = 'products'
     id = db.Column(db.Integer, primary_key=True)
@@ -94,11 +100,12 @@ class Product(db.Model, SerializerMixin):
     description = db.Column(db.Text)
     price = db.Column(db.Float, nullable=False)
     available_quantity = db.Column(db.Integer, nullable=False)
-    seller_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    seller_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
-    location = db.Column(Integer)
+    location = db.Column(db.Integer)
     shop_name = db.Column(db.String, nullable=False)
-    seller = db.relationship('User', back_populates='products')
+    
+    seller = db.relationship('Seller', back_populates='products')
     order_items = db.relationship('OrderItem', back_populates='product')
 
 class Order(db.Model, SerializerMixin):
@@ -110,7 +117,7 @@ class Order(db.Model, SerializerMixin):
     status = db.Column(db.String, default='pending')
     buyer = db.relationship('User', back_populates='orders')
     order_items = db.relationship('OrderItem', back_populates='order')
-    payments = db.relationship('Payment', back_populates='order')  # Relationship added here
+    payments = db.relationship('Payment', back_populates='order')
 
 class OrderItem(db.Model, SerializerMixin):
     __tablename__ = 'order_items'
@@ -138,24 +145,24 @@ class Review(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     bus_id = db.Column(db.Integer, nullable=True)
-    shop_id = db.Column(db.Integer, db.ForeignKey('retail_shops.id'), nullable=True)  # ForeignKey added here
+    shop_id = db.Column(db.Integer, db.ForeignKey('retail_shops.id'), nullable=True)
     product_id = db.Column(db.Integer, nullable=True)
     rating = db.Column(db.Integer, nullable=False)
     review = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     user = db.relationship('User', back_populates='reviews')
-    retail_shop = db.relationship('RetailShop', back_populates='reviews')  # Relationship added here
+    retail_shop = db.relationship('RetailShop', back_populates='reviews')
 
 class RetailShop(db.Model, SerializerMixin):
     __tablename__ = 'retail_shops'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
-    location = db.Column(Integer)
+    location = db.Column(db.Integer)
     contact_info = db.Column(db.Text)
     description = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     reviews = db.relationship('Review', back_populates='retail_shop')
-    
+
 class Payment(db.Model, SerializerMixin):
     __tablename__ = 'payments'
     id = db.Column(db.Integer, primary_key=True)
@@ -167,4 +174,28 @@ class Payment(db.Model, SerializerMixin):
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     booking = db.relationship('Booking', back_populates='payments')
-    order = db.relationship('Order', back_populates='payments')  # Relationship added here
+    order = db.relationship('Order', back_populates='payments')
+
+class Seller(db.Model, SerializerMixin):
+    __tablename__ = 'sellers'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    shop_name = db.Column(db.String, nullable=False)
+    location = db.Column(db.Integer, nullable=False)
+    contact_info = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+    user = db.relationship('User', back_populates='seller')
+    products = db.relationship('Product', back_populates='seller')
+    
+
+
+class Passenger(db.Model, SerializerMixin):
+    __tablename__ = 'passengers'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    contact_info = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+    user = db.relationship('User', back_populates='passenger')
+    bookings = db.relationship('Booking', back_populates='passenger')

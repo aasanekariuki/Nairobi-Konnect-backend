@@ -20,6 +20,12 @@ shell = "*"
 psycopg2-binary = "*"
 geoalchemy2 = "*"
 flask-mail = "*"
+faker = "*"
+flask-mpesa = "*"
+jinja2 = "*"
+werkzeug = "*"
+idna = "*"
+charset-normalizer = "*"
 
 [dev-packages]
 
