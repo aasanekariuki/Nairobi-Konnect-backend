@@ -10,7 +10,7 @@ class DriverResource(Resource):
     @jwt_required()
     def post(self):
         """Add a new route for the bus"""
-        from model import db, User, Bus, Route  # Import inside the method to avoid circular import
+        from model import db, User, Bus, Route  
         data = request.get_json()
         user_id = get_jwt_identity()['id']
 
