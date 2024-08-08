@@ -1,232 +1,48 @@
 from flask import request, jsonify
-from flask_restful import Resource, reqparse
+from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from model import db, User, Product, Order, OrderItem, Bus, Route
+from model import db, User
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-class DriverResource(Resource):
+class UserResource(Resource):
     @jwt_required()
-    def post(self):
-        """Add a new route for the bus"""
+    def get(self):
+        """View user profile"""
+        user_id = get_jwt_identity()['id']
+
+        try:
+            user = User.query.get(user_id)
+            if not user:
+                return {"message": "User not found", "status": "fail"}, 404
+
+            return {"profile": user.to_dict(), "status": "success"}, 200
+        except Exception as e:
+            logger.error(f"Error retrieving profile: {e}")
+            return {"message": "Error retrieving profile", "status": "fail", "error": str(e)}, 500
+
+    @jwt_required()
+    def put(self):
+        """Update user profile"""
+        user_id = get_jwt_identity()['id']
         data = request.get_json()
-        user_id = get_jwt_identity()['id']
 
         try:
             user = User.query.get(user_id)
-            if user.role != 'driver':
-                return {"message": "Unauthorized access", "status": "fail"}, 403
+            if not user:
+                return {"message": "User not found", "status": "fail"}, 404
 
-            bus = Bus.query.filter_by(driver_id=user_id).first()
-            if not bus:
-                return {"message": "No bus assigned to this driver", "status": "fail"}, 404
-
-            route = Route(
-                bus_id=bus.id,
-                start_location=data['start_location'],
-                end_location=data['end_location'],
-                departure_time=data['departure_time'],
-                arrival_time=data['arrival_time']
-            )
-            db.session.add(route)
-            db.session.commit()
-            return {"message": "Route added successfully", "status": "success"}, 201
-        except Exception as e:
-            logger.error(f"Error adding route: {e}")
-            return {"message": "Error adding route", "status": "fail", "error": str(e)}, 500
-
-    @jwt_required()
-    def get(self):
-        """View booked seats and issued tickets"""
-        user_id = get_jwt_identity()['id']
-
-        try:
-            user = User.query.get(user_id)
-            if user.role != 'driver':
-                return {"message": "Unauthorized access", "status": "fail"}, 403
-
-            bus = Bus.query.filter_by(driver_id=user_id).first()
-            if not bus:
-                return {"message": "No bus assigned to this driver", "status": "fail"}, 404
-
-            routes = Route.query.filter_by(bus_id=bus.id).all()
-            tickets_data = []
-
-            for route in routes:
-                booked_seats = Ticket.query.filter_by(route_id=route.id).count()
-                tickets = Ticket.query.filter_by(route_id=route.id).all()
-                tickets_info = [{"passenger_id": ticket.passenger_id, "seat_number": ticket.seat_number} for ticket in tickets]
-
-                tickets_data.append({
-                    "route_id": route.id,
-                    "start_location": route.start_location,
-                    "end_location": route.end_location,
-                    "departure_time": route.departure_time,
-                    "arrival_time": route.arrival_time,
-                    "booked_seats": booked_seats,
-                    "tickets": tickets_info
-                })
-
-            return {"routes": tickets_data}, 200
-        except Exception as e:
-            logger.error(f"Error retrieving tickets: {e}")
-            return {"message": "Error retrieving tickets", "status": "fail", "error": str(e)}, 500
-
-class PassengerResource(Resource):
-    @jwt_required()
-    def get(self):
-        """View available buses and book tickets"""
-        user_id = get_jwt_identity()['id']
-
-        try:
-            user = User.query.get(user_id)
-            if user.role != 'passenger':
-                return {"message": "Unauthorized access", "status": "fail"}, 403
-
-            # Assuming we have a Route model to list available routes
-            routes = Route.query.all()
-            route_data = []
-
-            for route in routes:
-                route_data.append({
-                    "route_id": route.id,
-                    "start_location": route.start_location,
-                    "end_location": route.end_location,
-                    "departure_time": route.departure_time,
-                    "arrival_time": route.arrival_time
-                })
-
-            return {"routes": route_data}, 200
-        except Exception as e:
-            logger.error(f"Error retrieving routes: {e}")
-            return {"message": "Error retrieving routes", "status": "fail", "error": str(e)}, 500
-
-class SellerResource(Resource):
-    @jwt_required()
-    def post(self):
-        """Add or update product stock"""
-        data = request.get_json()
-        user_id = get_jwt_identity()['id']
-
-        try:
-            user = User.query.get(user_id)
-            if user.role != 'seller':
-                return {"message": "Unauthorized access", "status": "fail"}, 403
-
-            product = Product.query.filter_by(name=data['name'], artisan_id=user_id).first()
-
-            if product:
-                product.description = data['description']
-                product.price = data['price']
-                product.available_quantity = data['available_quantity']
-                product.shop_name = data['shop_name']
-                product.location = data['location']
-            else:
-                product = Product(
-                    name=data['name'],
-                    description=data['description'],
-                    price=data['price'],
-                    available_quantity=data['available_quantity'],
-                    artisan_id=user_id,
-                    shop_name=data['shop_name'],
-                    location=data['location']
-                )
-                db.session.add(product)
+            user.username = data.get('username', user.username)
+            user.email = data.get('email', user.email)
+            # Ensure password is hashed if updated
+            if 'password' in data:
+                user.password = data['password']  # Ensure you hash the password
 
             db.session.commit()
-            return {"message": "Stock updated successfully", "status": "success"}, 200
+
+            return {"message": "Profile updated successfully", "status": "success"}, 200
         except Exception as e:
-            logger.error(f"Error adding/updating stock: {e}")
-            return {"message": "Error adding/updating stock", "status": "fail", "error": str(e)}, 500
-
-    @jwt_required()
-    def get(self):
-        """View orders for the seller's products"""
-        user_id = get_jwt_identity()['id']
-
-        try:
-            user = User.query.get(user_id)
-            if user.role != 'seller':
-                return {"message": "Unauthorized access", "status": "fail"}, 403
-
-            products = Product.query.filter_by(artisan_id=user_id).all()
-            product_ids = [product.id for product in products]
-            order_items = OrderItem.query.filter(OrderItem.product_id.in_(product_ids)).all()
-            order_ids = [item.order_id for item in order_items]
-            orders = Order.query.filter(Order.id.in_(order_ids)).all()
-
-            order_data = []
-            for order in orders:
-                total_amount = sum(item.unit_price * item.quantity for item in order_items if item.order_id == order.id)
-                order_data.append({
-                    "order_id": order.id,
-                    "total_amount": total_amount,
-                    "status": order.status,
-                    "created_at": order.created_at
-                })
-
-            return {"orders": order_data}, 200
-        except Exception as e:
-            logger.error(f"Error retrieving orders: {e}")
-            return {"message": "Error retrieving orders", "status": "fail", "error": str(e)}, 500
-
-class BuyerResource(Resource):
-    @jwt_required()
-    def post(self):
-        """Place an order for products"""
-        data = request.get_json()
-        user_id = get_jwt_identity()['id']
-
-        try:
-            user = User.query.get(user_id)
-            if user.role != 'buyer':
-                return {"message": "Unauthorized access", "status": "fail"}, 403
-
-            product = Product.query.get(data['product_id'])
-            if not product or product.available_quantity < data['quantity']:
-                return {"message": "Product not available or insufficient quantity", "status": "fail"}, 400
-
-            order = Order(user_id=user_id, total_price=product.price * data['quantity'])
-            db.session.add(order)
-            db.session.commit()
-
-            order_item = OrderItem(order_id=order.id, product_id=product.id, quantity=data['quantity'], unit_price=product.price)
-            db.session.add(order_item)
-            product.available_quantity -= data['quantity']
-            db.session.commit()
-
-            return {"message": "Order placed successfully", "status": "success"}, 200
-        except Exception as e:
-            logger.error(f"Error placing order: {e}")
-            return {"message": "Error placing order", "status": "fail", "error": str(e)}, 500
-
-    @jwt_required()
-    def get(self):
-        """View the buyer's orders"""
-        user_id = get_jwt_identity()['id']
-
-        try:
-            user = User.query.get(user_id)
-            if user.role != 'buyer':
-                return {"message": "Unauthorized access", "status": "fail"}, 403
-
-            orders = Order.query.filter_by(user_id=user_id).all()
-            order_data = []
-            for order in orders:
-                order_items = OrderItem.query.filter_by(order_id=order.id).all()
-                items_data = [{"product_id": item.product_id, "quantity": item.quantity, "unit_price": item.unit_price} for item in order_items]
-                total_amount = sum(item.unit_price * item.quantity for item in order_items)
-                order_data.append({
-                    "order_id": order.id,
-                    "total_amount": total_amount,
-                    "status": order.status,
-                    "created_at": order.created_at,
-                    "items": items_data
-                })
-
-            return {"orders": order_data}, 200
-        except Exception as e:
-            logger.error(f"Error retrieving orders: {e}")
-            return {"message": "Error retrieving orders", "status": "fail", "error": str(e)}, 500
+            logger.error(f"Error updating profile: {e}")
+            return {"message": "Error updating profile", "status": "fail", "error": str(e)}, 500
