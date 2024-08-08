@@ -130,6 +130,7 @@ class Order(db.Model, SerializerMixin):
     total_price = db.Column(db.Float, nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     status = db.Column(db.String, default='pending')
+
     buyer = db.relationship('User', back_populates='orders')
     order_items = db.relationship('OrderItem', back_populates='order')
     payments = db.relationship('Payment', back_populates='order')
@@ -141,6 +142,7 @@ class OrderItem(db.Model, SerializerMixin):
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'))
     quantity = db.Column(db.Integer, nullable=False)
     unit_price = db.Column(db.Float, nullable=False)
+    
     order = db.relationship('Order', back_populates='order_items')
     product = db.relationship('Product', back_populates='order_items')
 
