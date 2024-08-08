@@ -1,7 +1,7 @@
+
 from flask import request
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app import db, User, Bus, Route
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
@@ -11,6 +11,7 @@ class DriverResource(Resource):
     @jwt_required()
     def post(self):
         """Add a new route for the bus"""
+        from model import db, User, Bus, Route  
         data = request.get_json()
         user_id = get_jwt_identity()['id']
 
@@ -40,6 +41,7 @@ class DriverResource(Resource):
     @jwt_required()
     def get(self):
         """View booked seats and issued tickets"""
+        from model import db, User, Bus, Route, Ticket  
         user_id = get_jwt_identity()['id']
 
         try:
