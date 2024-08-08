@@ -42,6 +42,7 @@ from resources.auth import SignupResource, LoginResource, VerifyEmailResource
 from resources.profile import ProfileResource
 from resources.admin import AdminResource
 from resources.user import UserResource
+from resources.auth import ForgotPasswordResource, ResetPasswordResource
 
 api.add_resource(DriverResource, '/drivers')
 api.add_resource(PassengerResource, '/passengers')
@@ -53,6 +54,8 @@ api.add_resource(VerifyEmailResource, '/verify/<string:token>')
 api.add_resource(ProfileResource, '/profile')
 api.add_resource(AdminResource, '/admin', '/admin/<int:user_id>')
 api.add_resource(UserResource, '/user')
+api.add_resource(ForgotPasswordResource, '/forgot-password')
+api.add_resource(ResetPasswordResource, '/reset-password')
 
 @app.before_request
 def handle_preflight():
