@@ -6,13 +6,15 @@ from flask_mail import Mail, Message
 from model import db, User
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 import logging
-from app import app  # Ensure you import app where Mail is initialized
+from app import mail
 
+# Setup logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 SECRET_KEY = 'JWT_SECRET_KEY'
 EMAIL_CONFIRM_SALT = 'email-confirm-salt'
+FORGOT_PASSWORD_SALT = 'forgot-password-salt'
 
 # Initialize Mail
 mail = Mail(app)
@@ -20,6 +22,10 @@ mail = Mail(app)
 def generate_verification_token(email):
     serializer = URLSafeTimedSerializer(SECRET_KEY)
     return serializer.dumps(email, salt=EMAIL_CONFIRM_SALT)
+
+def generate_reset_token(email):
+    serializer = URLSafeTimedSerializer(SECRET_KEY)
+    return serializer.dumps(email, salt=FORGOT_PASSWORD_SALT)
 
 def send_verification_email(user_email, token):
     verify_url = f"http://localhost:5000/verify/{token}"
@@ -30,6 +36,18 @@ def send_verification_email(user_email, token):
     try:
         mail.send(msg)
         logger.debug(f"Verification email sent to {user_email}: {verify_url}")
+    except Exception as e:
+        logger.error(f"Failed to send email to {user_email}: {str(e)}")
+
+def send_reset_email(user_email, token):
+    reset_url = f"http://yourdomain.com/reset-password/{token}"
+    subject = "Password Reset Request"
+    body = f"Click the following link to reset your password: {reset_url}"
+
+    msg = Message(subject, recipients=[user_email], body=body)
+    try:
+        mail.send(msg)
+        logger.debug(f"Password reset email sent to {user_email}: {reset_url}")
     except Exception as e:
         logger.error(f"Failed to send email to {user_email}: {str(e)}")
 
@@ -106,4 +124,48 @@ class VerifyEmailResource(Resource):
 
         user.is_verified = True
         db.session.commit()
-        return {"message": "Email verified successfully."}, 200
+        return {"message": "Email verified successfully."}, 200 
+
+class ForgotPasswordResource(Resource):
+    def __init__(self):
+        self.parser = reqparse.RequestParser()
+        self.parser.add_argument('email', type=str, required=True, help="Email address is required")
+        super(ForgotPasswordResource, self).__init__()
+
+    def post(self):
+        data = self.parser.parse_args()
+        try:
+            user = User.query.filter_by(email=data['email']).first()
+            if not user:
+                return {"message": "No account associated with this email address.", "status": "fail"}, 404
+
+            reset_token = generate_reset_token(data['email'])
+            send_reset_email(data['email'], reset_token)
+
+            return {"message": "Password reset email sent.", "status": "success"}
+        except Exception as e:
+            logger.error(f"Error during password reset request: {e}")
+            return {"message": "Error processing password reset request", "status": "fail", "error": str(e)}, 500
+
+class ResetPasswordResource(Resource):
+    def __init__(self):
+        self.parser = reqparse.RequestParser()
+        self.parser.add_argument('token', type=str, required=True, help="Reset token is required")
+        self.parser.add_argument('new_password', type=str, required=True, help="New password is required")
+        super(ResetPasswordResource, self).__init__()
+
+    def post(self):
+        data = self.parser.parse_args()
+        serializer = URLSafeTimedSerializer(SECRET_KEY)
+        try:
+            email = serializer.loads(data['token'], salt=FORGOT_PASSWORD_SALT, max_age=3600)
+        except SignatureExpired:
+            return {"message": "Reset token expired. Please request a new one."}, 400
+        except BadSignature:
+            return {"message": "Invalid reset token."}, 400
+
+        user = User.query.filter_by(email=email).first_or_404()
+        password_hash = generate_password_hash(data['new_password']).decode('utf-8')
+        user.password_hash = password_hash
+        db.session.commit()
+        return {"message": "Password reset successfully."}, 200
