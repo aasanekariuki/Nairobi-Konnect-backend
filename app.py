@@ -33,7 +33,7 @@ migrate = Migrate(app, db, render_as_batch=True)
 
 api = Api(app)
 
-# Import resources after initializing app and db to avoid circular imports
+
 from resources.driver import DriverResource
 from resources.passenger import PassengerResource
 from resources.seller import SellerResource
