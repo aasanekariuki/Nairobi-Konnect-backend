@@ -64,3 +64,38 @@ class BuyerResource(Resource):
         except Exception as e:
             logger.error(f"Error retrieving orders: {e}")
             return {"message": "Error retrieving orders", "status": "fail", "error": str(e)}, 500
+
+
+@jwt_required()
+def delete(self):
+    """Cancel an order"""
+    data = request.get_json()
+    user_id = get_jwt_identity()['id']
+
+    try:
+        user = User.query.get(user_id)
+        if user.role != 'buyer':
+            return {"message": "Unauthorized access", "status": "fail"}, 403
+
+        order = Order.query.filter_by(id=data['order_id'], user_id=user_id).first()
+        if not order:
+            return {"message": "Order not found", "status": "fail"}, 404
+
+        if order.status != 'pending':  
+            return {"message": "Cannot cancel a processed order", "status": "fail"}, 400
+
+        
+        order_items = OrderItem.query.filter_by(order_id=order.id).all()
+        for item in order_items:
+            product = Product.query.get(item.product_id)
+            product.available_quantity += item.quantity
+            db.session.delete(item)
+
+        db.session.delete(order)
+        db.session.commit()
+
+        return {"message": "Order canceled successfully", "status": "success"}, 200
+    except Exception as e:
+        logger.error(f"Error canceling order: {e}")
+        return {"message": "Error canceling order", "status": "fail", "error": str(e)}, 500
+

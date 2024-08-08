@@ -75,3 +75,26 @@ class SellerResource(Resource):
         except Exception as e:
             logger.error(f"Error retrieving orders: {e}")
             return {"message": "Error retrieving orders", "status": "fail", "error": str(e)}, 500
+
+    @jwt_required()
+    def delete(self):
+        """Delete a product"""
+        data = request.get_json()
+        user_id = get_jwt_identity()['id']
+
+        try:
+            user = User.query.get(user_id)
+            if user.role != 'seller':
+                return {"message": "Unauthorized access", "status": "fail"}, 403
+
+            product = Product.query.filter_by(id=data['product_id'], artisan_id=user_id).first()
+
+            if not product:
+                return {"message": "Product not found or unauthorized", "status": "fail"}, 404
+
+            db.session.delete(product)
+            db.session.commit()
+            return {"message": "Product deleted successfully", "status": "success"}, 200
+        except Exception as e:
+            logger.error(f"Error deleting product: {e}")
+            return {"message": "Error deleting product", "status": "fail", "error": str(e)}, 500
