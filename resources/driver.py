@@ -40,7 +40,7 @@ class DriverResource(Resource):
     @jwt_required()
     def get(self):
         """View booked seats and issued tickets"""
-        from model import db, User, Bus, Route, Ticket  # Import inside the method to avoid circular import
+        from model import db, User, Bus, Route, Ticket 
         user_id = get_jwt_identity()['id']
 
         try:
