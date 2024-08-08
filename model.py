@@ -2,6 +2,7 @@ from sqlalchemy import MetaData, Time, Date
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy_serializer import SerializerMixin
 from flask_bcrypt import check_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 
 # initialize metadata
 metadata = MetaData()
@@ -27,6 +28,21 @@ class User(db.Model, SerializerMixin):
     reviews = db.relationship('Review', back_populates='user')
     seller = db.relationship('Seller', back_populates='user', uselist=False)
     passenger = db.relationship('Passenger', back_populates='user', uselist=False)
+    
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+    
+    def to_dict(self):
+        """Convert the user model instance to a dictionary."""
+        return {
+            'id': self.id,
+            'username': self.username,
+            'email': self.email,
+            'profile_picture': self.profile_picture
+        }
 
 class Driver(db.Model, SerializerMixin):
     __tablename__ = 'drivers'
