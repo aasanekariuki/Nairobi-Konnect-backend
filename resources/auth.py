@@ -2,28 +2,31 @@ from flask import request, jsonify
 from flask_restful import Resource, reqparse
 from flask_jwt_extended import create_access_token
 from flask_bcrypt import generate_password_hash, check_password_hash
-from flask_mail import Message
+from flask_mail import Mail, Message
 from model import db, User
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 import logging
-# from app import mail  
+from app import app  # Ensure you import app where Mail is initialized
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-SECRET_KEY = 'Nairobi_konnect_key'
+SECRET_KEY = 'JWT_SECRET_KEY'
 EMAIL_CONFIRM_SALT = 'email-confirm-salt'
+
+# Initialize Mail
+mail = Mail(app)
 
 def generate_verification_token(email):
     serializer = URLSafeTimedSerializer(SECRET_KEY)
     return serializer.dumps(email, salt=EMAIL_CONFIRM_SALT)
 
 def send_verification_email(user_email, token):
-    verify_url = f"http://yourdomain.com/verify/{token}"
+    verify_url = f"http://localhost:5000/verify/{token}"
     subject = "Please verify your email"
     body = f"Click the following link to verify your email: {verify_url}"
 
-    msg = Message(subject, recipients=[user_email], body=body)
+    msg = Message(subject, recipients=[user_email], body=body, sender=app.config['MAIL_USERNAME'])
     try:
         mail.send(msg)
         logger.debug(f"Verification email sent to {user_email}: {verify_url}")
@@ -86,6 +89,9 @@ class LoginResource(Resource):
 
 class VerifyEmailResource(Resource):
     def get(self, token):
+        """Verify email using verification token"""
+        
+        logger.debug(f"Received token: {token}")
         serializer = URLSafeTimedSerializer(SECRET_KEY)
         try:
             email = serializer.loads(token, salt=EMAIL_CONFIRM_SALT, max_age=3600)
@@ -100,4 +106,4 @@ class VerifyEmailResource(Resource):
 
         user.is_verified = True
         db.session.commit()
-        return {"message": "Email verified successfully."}, 200 
+        return {"message": "Email verified successfully."}, 200
