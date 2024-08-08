@@ -1,181 +1,211 @@
-import os
+from datetime import datetime
 from faker import Faker
-from model import db, User, Driver, Passenger, Seller, Bus, Route, Schedule, Booking, Product, Order, OrderItem, Comment, Review, RetailShop, Payment
-from flask import Flask
-from werkzeug.security import generate_password_hash
+from app import db  
+from model import (User, Driver, Bus, Route, Schedule, Booking, Product, Order, OrderItem,
+                             Comment, Review, RetailShop, Payment, Seller, Passenger)
 
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-db.init_app(app)
 fake = Faker()
 
-
-
-def create_fake_user(role):
-    username = fake.user_name()
-    email = fake.email()
-    password = generate_password_hash('password')
-    user = User(username=username, email=email, password_hash=password, role=role)
-    db.session.add(user)
-    db.session.commit()
-    return user
+def create_fake_user():
+    return User(
+        username=fake.user_name(),
+        email=fake.email(),
+        password_hash=fake.password(),
+        role='user',   
+        created_at=datetime.utcnow()
+    )
 
 def create_fake_driver():
-    name = fake.name()
-    contact_info = fake.phone_number()
-    driver = Driver(name=name, contact_info=contact_info)
-    db.session.add(driver)
-    db.session.commit()
-    return driver
-
-def create_fake_passenger(user_id):
-    contact_info = fake.phone_number()
-    passenger = Passenger(user_id=user_id, contact_info=contact_info)
-    db.session.add(passenger)
-    db.session.commit()
-    return passenger
-
-def create_fake_seller(user_id):
-    shop_name = fake.company()
-    location = fake.random_int(min=1, max=100)
-    contact_info = fake.phone_number()
-    seller = Seller(user_id=user_id, shop_name=shop_name, location=location, contact_info=contact_info)
-    db.session.add(seller)
-    db.session.commit()
-    return seller
+    return Driver(
+        name=fake.name(),
+        contact_info=fake.phone_number()
+    )
 
 def create_fake_bus(driver_id):
-    bus_number = fake.license_plate()
-    seat_capacity = fake.random_int(min=20, max=50)
-    current_location = fake.random_int(min=1, max=100)
-    bus = Bus(driver_id=driver_id, bus_number=bus_number, seat_capacity=seat_capacity, current_location=current_location)
-    db.session.add(bus)
-    db.session.commit()
-    return bus
+    return Bus(
+        driver_id=driver_id,
+        bus_number=fake.license_plate(),
+        seat_capacity=fake.random_int(min=10, max=50),
+        current_location=fake.random_int(min=1, max=100)
+    )
 
 def create_fake_route():
-    origin = fake.city()
-    destination = fake.city()
-    description = fake.sentence()
-    route = Route(origin=origin, destination=destination, description=description)
-    db.session.add(route)
-    db.session.commit()
-    return route
+    return Route(
+        origin=fake.city(),
+        destination=fake.city(),
+        description=fake.text()
+    )
 
 def create_fake_schedule(bus_id, route_id):
-    departure_time = fake.time()
-    arrival_time = fake.time()
-    date = fake.date()
+    departure_time = fake.time_object()
+    arrival_time = fake.time_object()
+    date = fake.date_object()
     available_seats = fake.random_int(min=1, max=50)
-    schedule = Schedule(bus_id=bus_id, route_id=route_id, departure_time=departure_time, arrival_time=arrival_time, date=date, available_seats=available_seats)
-    db.session.add(schedule)
-    db.session.commit()
-    return schedule
+    
+    return Schedule(
+        bus_id=bus_id,
+        route_id=route_id,
+        departure_time=departure_time,
+        arrival_time=arrival_time,
+        date=date,
+        available_seats=available_seats
+    )
+
+def create_fake_booking(user_id, schedule_id, passenger_id):
+    return Booking(
+        user_id=user_id,
+        schedule_id=schedule_id,
+        passenger_id=passenger_id,
+        seat_number=fake.random_int(min=1, max=50),
+        payment_status=fake.boolean(),
+        ticket_number=fake.uuid4()
+    )
 
 def create_fake_product(seller_id):
-    name = fake.bs()
-    description = fake.text()
-    price = fake.random_float(min=1.0, max=100.0)
-    available_quantity = fake.random_int(min=1, max=100)
-    location = fake.random_int(min=1, max=100)
-    shop_name = fake.company()
-    product = Product(name=name, description=description, price=price, available_quantity=available_quantity, seller_id=seller_id, location=location, shop_name=shop_name)
-    db.session.add(product)
-    db.session.commit()
-    return product
+    return Product(
+        name=fake.word(),
+        description=fake.text(),
+        price=fake.pyfloat(left_digits=2, right_digits=2, positive=True, min_value=1.0, max_value=100.0),
+        available_quantity=fake.random_int(min=1, max=100),
+        image_url=fake.image_url(),
+        seller_id=seller_id,
+        location=fake.random_int(min=1, max=100),
+        shop_name=fake.company()
+    )
 
-def create_fake_booking(user_id, schedule_id):
-    seat_number = fake.random_int(min=1, max=50)
-    payment_status = fake.boolean()
-    ticket_number = fake.uuid4()
-    booking = Booking(user_id=user_id, schedule_id=schedule_id, seat_number=seat_number, payment_status=payment_status, ticket_number=ticket_number)
-    db.session.add(booking)
-    db.session.commit()
-    return booking
-
-def create_fake_order(user_id):
-    total_price = fake.random_float(min=10.0, max=1000.0)
-    status = 'pending'
-    order = Order(buyer_id=user_id, total_price=total_price, status=status)
-    db.session.add(order)
-    db.session.commit()
-    return order
+def create_fake_order(buyer_id):
+    return Order(
+        buyer_id=buyer_id,
+        total_price=fake.pyfloat(left_digits=2, right_digits=2, positive=True, min_value=10.0, max_value=500.0),
+        status='pending'
+    )
 
 def create_fake_order_item(order_id, product_id):
-    quantity = fake.random_int(min=1, max=10)
-    unit_price = fake.random_float(min=1.0, max=100.0)
-    order_item = OrderItem(order_id=order_id, product_id=product_id, quantity=quantity, unit_price=unit_price)
-    db.session.add(order_item)
-    db.session.commit()
-    return order_item
+    return OrderItem(
+        order_id=order_id,
+        product_id=product_id,
+        quantity=fake.random_int(min=1, max=5),
+        unit_price=fake.pyfloat(left_digits=2, right_digits=2, positive=True, min_value=1.0, max_value=100.0)
+    )
 
-def create_fake_comment(user_id, entity_id, entity_type):
-    rating = fake.random_int(min=1, max=5)
-    comment = fake.text()
-    comment = Comment(user_id=user_id, entity_id=entity_id, entity_type=entity_type, rating=rating, comment=comment)
-    db.session.add(comment)
-    db.session.commit()
-    return comment
+def create_fake_comment(user_id):
+    return Comment(
+        user_id=user_id,
+        entity_id=fake.random_int(min=1, max=100),
+        entity_type=fake.word(),  
+        rating=fake.random_int(min=1, max=5),
+        comment=fake.text()
+    )
 
-def create_fake_review(user_id, entity_id, entity_type):
-    rating = fake.random_int(min=1, max=5)
-    review = fake.text()
-    review = Review(user_id=user_id, entity_id=entity_id, entity_type=entity_type, rating=rating, review=review)
-    db.session.add(review)
-    db.session.commit()
-    return review
+def create_fake_review(user_id):
+    return Review(
+        user_id=user_id,
+        bus_id=fake.random_int(min=1, max=100),
+        shop_id=fake.random_int(min=1, max=100),
+        product_id=fake.random_int(min=1, max=100),
+        rating=fake.random_int(min=1, max=5),
+        review=fake.text()
+    )
 
-def create_fake_payment(booking_id=None, order_id=None):
-    amount = fake.random_float(min=10.0, max=1000.0)
-    status = 'completed'
-    transaction_id = fake.uuid4()
-    payment = Payment(booking_id=booking_id, order_id=order_id, amount=amount, status=status, transaction_id=transaction_id)
-    db.session.add(payment)
-    db.session.commit()
-    return payment
+def create_fake_retail_shop():
+    return RetailShop(
+        name=fake.company(),
+        location=fake.random_int(min=1, max=100),
+        contact_info=fake.phone_number(),
+        description=fake.text()
+    )
 
-with app.app_context():
-    db.create_all()
+def create_fake_payment(booking_id, order_id):
+    return Payment(
+        booking_id=booking_id,
+        order_id=order_id,
+        amount=fake.pyfloat(left_digits=2, right_digits=2, positive=True, min_value=1.0, max_value=500.0),
+        status=fake.word(),
+        transaction_id=fake.uuid4()
+    )
 
-    for _ in range(10):
-        user = create_fake_user('buyer')
-        create_fake_passenger(user.id)
+def create_fake_seller(user_id):
+    return Seller(
+        user_id=user_id,
+        shop_name=fake.company(),
+        location=fake.random_int(min=1, max=100),
+        contact_info=fake.phone_number()
+    )
+
+def create_fake_passenger(user_id):
+    return Passenger(
+        user_id=user_id,
+        contact_info=fake.phone_number()
+    )
+
+def seed_db():
     
-    for _ in range(5):
-        user = create_fake_user('seller')
-        create_fake_seller(user.id)
-    
-    for _ in range(5):
-        driver = create_fake_driver()
+    users = [create_fake_user() for _ in range(10)]
+    db.session.add_all(users)
+    db.session.commit()
 
-    for _ in range(5):
-        driver = create_fake_driver()
-        bus = create_fake_bus(driver.id)
-        route = create_fake_route()
-        schedule = create_fake_schedule(bus.id, route.id)
-        for _ in range(10):
-            user = create_fake_user('buyer')
-            create_fake_booking(user.id, schedule.id)
-        
-        for _ in range(10):
-            user = create_fake_user('seller')
-            seller = create_fake_seller(user.id)
-            product = create_fake_product(seller.id)
-            order = create_fake_order(user.id)
-            create_fake_order_item(order.id, product.id)
-    
-    for _ in range(10):
-        user = create_fake_user('buyer')
-        create_fake_comment(user.id, fake.random_int(min=1, max=5), 'bus')
-        create_fake_review(user.id, fake.random_int(min=1, max=5), 'product')
+    drivers = [create_fake_driver() for _ in range(5)]
+    db.session.add_all(drivers)
+    db.session.commit()
 
-    for _ in range(10):
-        booking = create_fake_booking(fake.random_int(min=1, max=10), fake.random_int(min=1, max=10))
-        order = create_fake_order(fake.random_int(min=1, max=10))
-        create_fake_payment(booking.id, order.id)
-        
-        
-        
-        
+    buses = [create_fake_bus(driver_id=fake.random_int(min=1, max=5)) for _ in range(20)]
+    db.session.add_all(buses)
+    db.session.commit()
+
+    routes = [create_fake_route() for _ in range(10)]
+    db.session.add_all(routes)
+    db.session.commit()
+
+    schedules = [create_fake_schedule(bus_id=fake.random_int(min=1, max=20), route_id=fake.random_int(min=1, max=10)) for _ in range(30)]
+    db.session.add_all(schedules)
+    db.session.commit()
+
+    bookings = [create_fake_booking(user_id=fake.random_int(min=1, max=10), schedule_id=fake.random_int(min=1, max=30), passenger_id=fake.random_int(min=1, max=10)) for _ in range(50)]
+    db.session.add_all(bookings)
+    db.session.commit()
+
+    sellers = [create_fake_seller(user_id=fake.random_int(min=1, max=10)) for _ in range(5)]
+    db.session.add_all(sellers)
+    db.session.commit()
+    
+    products = [create_fake_product(seller_id=fake.random_int(min=1, max=5)) for _ in range(25)]
+    db.session.add_all(products)
+    db.session.commit()
+
+    # Create orders
+    orders = [create_fake_order(buyer_id=fake.random_int(min=1, max=10)) for _ in range(20)]
+    db.session.add_all(orders)
+    db.session.commit()
+
+    # Create order items
+    order_items = [create_fake_order_item(order_id=fake.random_int(min=1, max=20), product_id=fake.random_int(min=1, max=25)) for _ in range(100)]
+    db.session.add_all(order_items)
+    db.session.commit()
+
+    # Create comments
+    comments = [create_fake_comment(user_id=fake.random_int(min=1, max=10)) for _ in range(30)]
+    db.session.add_all(comments)
+    db.session.commit()
+
+    # Create reviews
+    reviews = [create_fake_review(user_id=fake.random_int(min=1, max=10)) for _ in range(20)]
+    db.session.add_all(reviews)
+    db.session.commit()
+
+    # Create retail shops
+    retail_shops = [create_fake_retail_shop() for _ in range(10)]
+    db.session.add_all(retail_shops)
+    db.session.commit()
+
+    # Create payments
+    payments = [create_fake_payment(booking_id=fake.random_int(min=1, max=50), order_id=fake.random_int(min=1, max=20)) for _ in range(30)]
+    db.session.add_all(payments)
+    db.session.commit()
+
+    # Create passengers
+    passengers = [create_fake_passenger(user_id=fake.random_int(min=1, max=10)) for _ in range(10)]
+    db.session.add_all(passengers)
+    db.session.commit()
+
+if __name__ == '__main__':
+    seed_db()
