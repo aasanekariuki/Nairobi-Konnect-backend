@@ -172,37 +172,32 @@ def seed_db():
     db.session.add_all(products)
     db.session.commit()
 
-    # Create orders
     orders = [create_fake_order(buyer_id=fake.random_int(min=1, max=10)) for _ in range(20)]
     db.session.add_all(orders)
     db.session.commit()
 
-    # Create order items
     order_items = [create_fake_order_item(order_id=fake.random_int(min=1, max=20), product_id=fake.random_int(min=1, max=25)) for _ in range(100)]
     db.session.add_all(order_items)
     db.session.commit()
 
-    # Create comments
     comments = [create_fake_comment(user_id=fake.random_int(min=1, max=10)) for _ in range(30)]
     db.session.add_all(comments)
     db.session.commit()
 
-    # Create reviews
     reviews = [create_fake_review(user_id=fake.random_int(min=1, max=10)) for _ in range(20)]
     db.session.add_all(reviews)
     db.session.commit()
 
-    # Create retail shops
+    
     retail_shops = [create_fake_retail_shop() for _ in range(10)]
     db.session.add_all(retail_shops)
     db.session.commit()
 
-    # Create payments
+    
     payments = [create_fake_payment(booking_id=fake.random_int(min=1, max=50), order_id=fake.random_int(min=1, max=20)) for _ in range(30)]
     db.session.add_all(payments)
     db.session.commit()
 
-    # Create passengers
     passengers = [create_fake_passenger(user_id=fake.random_int(min=1, max=10)) for _ in range(10)]
     db.session.add_all(passengers)
     db.session.commit()

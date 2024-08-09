@@ -6,7 +6,7 @@ from flask_mail import Mail, Message
 from model import db, User
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 import logging
-from app import mail
+from app import app, mail
 
 # Setup logging
 logging.basicConfig(level=logging.DEBUG)

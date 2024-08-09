@@ -95,7 +95,7 @@ class Booking(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     schedule_id = db.Column(db.Integer, db.ForeignKey('schedules.id'))
-    passenger_id = db.Column(db.Integer, db.ForeignKey('passengers.id'))  # Added Foreign Key
+    passenger_id = db.Column(db.Integer, db.ForeignKey('passengers.id'))  
     seat_number = db.Column(db.Integer, nullable=False)
     payment_status = db.Column(db.Boolean, default=False)
     ticket_number = db.Column(db.String, nullable=False, unique=True)
@@ -104,7 +104,7 @@ class Booking(db.Model, SerializerMixin):
     user = db.relationship('User', back_populates='bookings')
     schedule = db.relationship('Schedule', back_populates='bookings')
     payments = db.relationship('Payment', back_populates='booking')
-    passenger = db.relationship('Passenger', back_populates='bookings')  # Added relationship
+    passenger = db.relationship('Passenger', back_populates='bookings')  
 
 class Product(db.Model, SerializerMixin):
     __tablename__ = 'products'
@@ -148,8 +148,8 @@ class Comment(db.Model, SerializerMixin):
     __tablename__ = 'comments'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    entity_id = db.Column(db.Integer)  # ID of the entity being commented on
-    entity_type = db.Column(db.String, nullable=False)  # 'accommodation', 'retail_shop', 'bus', 'product'
+    entity_id = db.Column(db.Integer)  
+    entity_type = db.Column(db.String, nullable=False)  
     rating = db.Column(db.Integer, nullable=False)
     comment = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
@@ -200,7 +200,6 @@ class Seller(db.Model, SerializerMixin):
     contact_info = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
 
-    # Relationships
     user = db.relationship('User', back_populates='seller')
     products = db.relationship('Product', back_populates='seller', lazy=True)
 
@@ -212,4 +211,4 @@ class Passenger(db.Model, SerializerMixin):
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
 
     user = db.relationship('User', back_populates='passenger')
-    bookings = db.relationship('Booking', back_populates='passenger')  # Added relationship
+    bookings = db.relationship('Booking', back_populates='passenger')  
