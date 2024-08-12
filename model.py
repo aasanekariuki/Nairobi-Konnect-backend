@@ -4,7 +4,7 @@ from sqlalchemy_serializer import SerializerMixin
 from flask_bcrypt import check_password_hash
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# initialize metadata
+# Initialize metadata
 metadata = MetaData()
 
 db = SQLAlchemy(metadata=metadata)
@@ -28,13 +28,13 @@ class User(db.Model, SerializerMixin):
     reviews = db.relationship('Review', back_populates='user')
     seller = db.relationship('Seller', back_populates='user', uselist=False)
     passenger = db.relationship('Passenger', back_populates='user', uselist=False)
-    
+
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
-    
+
     def to_dict(self):
         """Convert the user model instance to a dictionary."""
         return {
@@ -114,13 +114,13 @@ class Product(db.Model, SerializerMixin):
     price = db.Column(db.Float, nullable=False)
     available_quantity = db.Column(db.Integer, nullable=False)
     image_url = db.Column(db.String, nullable=True)
-    seller_id = db.Column(db.Integer, db.ForeignKey('sellers.id'), nullable=False)
+    stall_id = db.Column(db.Integer, db.ForeignKey('stalls.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     location = db.Column(db.Integer)
     shop_name = db.Column(db.String, nullable=False)
 
     # Relationships
-    seller = db.relationship('Seller', back_populates='products')
+    stall = db.relationship('Stall', back_populates='products')
     order_items = db.relationship('OrderItem', back_populates='product')
 
 class Order(db.Model, SerializerMixin):
@@ -203,7 +203,19 @@ class Seller(db.Model, SerializerMixin):
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
 
     user = db.relationship('User', back_populates='seller')
-    products = db.relationship('Product', back_populates='seller', lazy=True)
+    stalls = db.relationship('Stall', back_populates='seller', lazy=True)
+
+class Stall(db.Model, SerializerMixin):
+    __tablename__ = 'stalls'
+    id = db.Column(db.Integer, primary_key=True)
+    seller_id = db.Column(db.Integer, db.ForeignKey('sellers.id'))
+    stall_name = db.Column(db.String, nullable=False)
+    description = db.Column(db.Text)
+    location = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+    seller = db.relationship('Seller', back_populates='stalls')
+    products = db.relationship('Product', back_populates='stall')
 
 class Passenger(db.Model, SerializerMixin):
     __tablename__ = 'passengers'
@@ -213,4 +225,4 @@ class Passenger(db.Model, SerializerMixin):
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
 
     user = db.relationship('User', back_populates='passenger')
-    bookings = db.relationship('Booking', back_populates='passenger')  
+    bookings = db.relationship('Booking', back_populates='passenger')
