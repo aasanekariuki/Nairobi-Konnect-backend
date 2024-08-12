@@ -16,13 +16,13 @@ jwt_manager = JWTManager(app)
 #app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI') 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['MAIL_SERVER'] = 'smtp.example.com'
+app.config['MAIL_SERVER'] = 'smtp.resend.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
-app.config['MAIL_USERNAME'] = 'your-email@example.com'
-app.config['MAIL_PASSWORD'] = 'your-email-password'
-app.config['MAIL_DEFAULT_SENDER'] = 'your-email@example.com'
+app.config['MAIL_USERNAME'] = 'resend'
+app.config['MAIL_PASSWORD'] = 're_392zdM2N_PVaeyRj7neskG5fAatZF1Peg'
+app.config['MAIL_DEFAULT_SENDER'] = 'sys@bloomship.co'
 
 db.init_app(app)
 mail = Mail(app)
