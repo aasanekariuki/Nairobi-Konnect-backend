@@ -1,17 +1,24 @@
 from datetime import datetime
 from faker import Faker
-from app import db  
-from model import (User, Driver, Bus, Route, Schedule, Booking, Product, Order, OrderItem,
-                             Comment, Review, RetailShop, Payment, Seller, Passenger)
+from flask_bcrypt import check_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
+from app import db, app 
+from model import (
+    User, Driver, Bus, Route, Schedule, Booking, Product, Order, OrderItem,
+    Comment, Review, RetailShop, Payment, Seller, Passenger, Stall
+)
 
 fake = Faker()
+# app = app()
 
 def create_fake_user():
     return User(
         username=fake.user_name(),
         email=fake.email(),
-        password_hash=fake.password(),
-        role='user',   
+        password_hash=generate_password_hash(fake.password()),
+        role='user',
+        is_verified=fake.boolean(),
+        is_active=fake.boolean(),
         created_at=datetime.utcnow()
     )
 
@@ -61,14 +68,14 @@ def create_fake_booking(user_id, schedule_id, passenger_id):
         ticket_number=fake.uuid4()
     )
 
-def create_fake_product(seller_id):
+def create_fake_product(stall_id):
     return Product(
         name=fake.word(),
         description=fake.text(),
         price=fake.pyfloat(left_digits=2, right_digits=2, positive=True, min_value=1.0, max_value=100.0),
         available_quantity=fake.random_int(min=1, max=100),
         image_url=fake.image_url(),
-        seller_id=seller_id,
+        stall_id=stall_id,
         location=fake.random_int(min=1, max=100),
         shop_name=fake.company()
     )
@@ -77,7 +84,7 @@ def create_fake_order(buyer_id):
     return Order(
         buyer_id=buyer_id,
         total_price=fake.pyfloat(left_digits=2, right_digits=2, positive=True, min_value=10.0, max_value=500.0),
-        status='pending'
+        status=fake.random_element(elements=('pending', 'completed', 'cancelled'))
     )
 
 def create_fake_order_item(order_id, product_id):
@@ -138,8 +145,15 @@ def create_fake_passenger(user_id):
         contact_info=fake.phone_number()
     )
 
+def create_fake_stall(seller_id):
+    return Stall(
+        seller_id=seller_id,
+        stall_name=fake.word(),
+        description=fake.text(),
+        location=fake.random_int(min=1, max=100)
+    )
+
 def seed_db():
-    
     users = [create_fake_user() for _ in range(10)]
     db.session.add_all(users)
     db.session.commit()
@@ -168,7 +182,11 @@ def seed_db():
     db.session.add_all(sellers)
     db.session.commit()
     
-    products = [create_fake_product(seller_id=fake.random_int(min=1, max=5)) for _ in range(25)]
+    stalls = [create_fake_stall(seller_id=fake.random_int(min=1, max=5)) for _ in range(10)]
+    db.session.add_all(stalls)
+    db.session.commit()
+
+    products = [create_fake_product(stall_id=fake.random_int(min=1, max=10)) for _ in range(25)]
     db.session.add_all(products)
     db.session.commit()
 
@@ -188,12 +206,10 @@ def seed_db():
     db.session.add_all(reviews)
     db.session.commit()
 
-    
     retail_shops = [create_fake_retail_shop() for _ in range(10)]
     db.session.add_all(retail_shops)
     db.session.commit()
 
-    
     payments = [create_fake_payment(booking_id=fake.random_int(min=1, max=50), order_id=fake.random_int(min=1, max=20)) for _ in range(30)]
     db.session.add_all(payments)
     db.session.commit()
@@ -203,4 +219,5 @@ def seed_db():
     db.session.commit()
 
 if __name__ == '__main__':
-    seed_db()
+    with app.app_context():
+        seed_db()
