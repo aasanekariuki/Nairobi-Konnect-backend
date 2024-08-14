@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 
 from model import db
 
- 
 load_dotenv()
 
 app = Flask(__name__)
