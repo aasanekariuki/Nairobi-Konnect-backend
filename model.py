@@ -20,6 +20,7 @@ class User(db.Model, SerializerMixin):
     is_verified = db.Column(db.Boolean, default=False)
     is_active = db.Column(db.Boolean, default=True)
     verification_token = db.Column(db.String, nullable=True)
+    profile_picture = db.Column(db.String, nullable=True)  # New field for storing the profile picture path or URL
 
     # Relationships
     bookings = db.relationship('Booking', back_populates='user')
@@ -41,14 +42,15 @@ class User(db.Model, SerializerMixin):
             'id': self.id,
             'username': self.username,
             'email': self.email,
-            'profile_picture': self.profile_picture
+            'profile_picture': self.profile_picture  # Include the profile picture in the dictionary
         }
 
 class Driver(db.Model, SerializerMixin):
     __tablename__ = 'drivers'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
-    contact_info = db.Column(db.Text)
+    email = db.Column(db.String, nullable=False, unique=True)
+    contact_info = db.Column(db.Text, nullable=False, unique=True)
     buses = db.relationship('Bus', back_populates='driver')
 
 class Bus(db.Model, SerializerMixin):
@@ -126,7 +128,7 @@ class Product(db.Model, SerializerMixin):
 class Order(db.Model, SerializerMixin):
     __tablename__ = 'orders'
     id = db.Column(db.Integer, primary_key=True)
-    buyer_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     total_price = db.Column(db.Float, nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     status = db.Column(db.String, default='pending')
@@ -162,23 +164,13 @@ class Review(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     bus_id = db.Column(db.Integer, nullable=True)
-    shop_id = db.Column(db.Integer, db.ForeignKey('retail_shops.id'), nullable=True)
+    shop_id = db.Column(db.Integer, db.ForeignKey('stalls.id'))  # Updated to 'stalls.id'
     product_id = db.Column(db.Integer, nullable=True)
     rating = db.Column(db.Integer, nullable=False)
     review = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     user = db.relationship('User', back_populates='reviews')
-    retail_shop = db.relationship('RetailShop', back_populates='reviews')
-
-class RetailShop(db.Model, SerializerMixin):
-    __tablename__ = 'retail_shops'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, nullable=False)
-    location = db.Column(db.Integer)
-    contact_info = db.Column(db.Text)
-    description = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
-    reviews = db.relationship('Review', back_populates='retail_shop')
+    stall = db.relationship('Stall', back_populates='reviews')  # Make sure this matches
 
 class Payment(db.Model, SerializerMixin):
     __tablename__ = 'payments'
@@ -186,7 +178,7 @@ class Payment(db.Model, SerializerMixin):
     booking_id = db.Column(db.Integer, db.ForeignKey('bookings.id'))
     order_id = db.Column(db.Integer, db.ForeignKey('orders.id'))
     amount = db.Column(db.Float, nullable=False)
-    status = db.Column(db.String, nullable=False)
+    status = db.Column(db.String(50), nullable=False)
     transaction_id = db.Column(db.String, unique=True)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
@@ -198,7 +190,7 @@ class Seller(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     shop_name = db.Column(db.String, nullable=False)
-    location = db.Column(db.Integer, nullable=False)
+    location = db.Column(db.String, nullable=False)
     contact_info = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
 
@@ -211,9 +203,11 @@ class Stall(db.Model, SerializerMixin):
     seller_id = db.Column(db.Integer, db.ForeignKey('sellers.id'))
     stall_name = db.Column(db.String, nullable=False)
     description = db.Column(db.Text)
-    location = db.Column(db.Integer, nullable=False)
+    location = db.Column(db.String, nullable=False)
+    image_url = db.Column(db.String, nullable=True)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
-
+    
+    reviews = db.relationship('Review', back_populates='stall')
     seller = db.relationship('Seller', back_populates='stalls')
     products = db.relationship('Product', back_populates='stall')
 

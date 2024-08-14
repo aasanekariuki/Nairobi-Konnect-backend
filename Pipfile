@@ -26,6 +26,7 @@ jinja2 = "*"
 werkzeug = "*"
 idna = "*"
 charset-normalizer = "*"
+flask-uploads = "*"
 
 [dev-packages]
 

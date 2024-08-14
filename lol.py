@@ -1,17 +1,12 @@
 from datetime import datetime, time, date
 import random
 import string
-from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash
-from app import db, app
-from faker import Faker
+from app import db
 from model import (
     User, Driver, Bus, Route, Schedule, Booking, Product, Order, OrderItem,
     Comment, Review, Payment, Seller, Passenger, Stall
 )
-from resources import user
-
-faker = Faker()
 
 # Helper function to generate a random ticket number
 def generate_ticket_number(length=8):
@@ -67,52 +62,30 @@ def seed_users():
             is_active=False
         )
     ]
+    db.session.add_all(users)
+    db.session.commit()
 
-    with app.app_context():
-        for user in users:
-            if not User.query.filter_by(email=user.email).first():
-                db.session.add(user)
-        
-        try:
-            db.session.commit()
-        except IntegrityError:
-            db.session.rollback()  # Rollback the session if there was an IntegrityError
-
-# Call the function to seed the data
-seed_users()
 
 # Seed Drivers
 def seed_drivers():
     drivers = [
-        Driver(name="John Doe", email="john.doe@example.com", contact_info="+254700000001"),
-        Driver(name="Jane Smith", email="jane.smith@example.com", contact_info="+254700000002"),
-        Driver(name="Alex Johnson", email="alex.johnson@example.com", contact_info="+254700000003"),
+        Driver(name="John Doe", contact_info="john.doe@example.com, +254700000001"),
+        Driver(name="Jane Smith", contact_info="jane.smith@example.com, +254700000002"),
+        Driver(name="Alex Johnson", contact_info="alex.johnson@example.com, +254700000003"),
     ]
     db.session.add_all(drivers)
     db.session.commit()
+
 # Seed Buses
 def seed_buses():
-    # Clear existing buses
-    db.session.query(Bus).delete()
-    db.session.commit()
-
-    bus_numbers = set()
-    for _ in range(10):  # Adjust the range as needed
-        while True:
-            # Generate a bus number in the format "NBI-XXX" where XXX is a random 3-digit number
-            bus_number = f"NBI-{faker.random_int(min=1, max=999):03}"
-            if bus_number not in bus_numbers:
-                bus_numbers.add(bus_number)
-                break
-
-        new_bus = Bus(
-            driver_id=faker.random_int(min=1, max=10),
-            bus_number=bus_number,
-            seat_capacity=faker.random_int(min=30, max=50),
-            current_location=faker.city()
-        )
-        db.session.add(new_bus)
-    
+    drivers = Driver.query.all()
+    buses = [
+        Bus(driver_id=drivers[0].id, bus_number="NBI-001", seat_capacity=40, current_location=100),
+        Bus(driver_id=drivers[1].id, bus_number="NBI-002", seat_capacity=50, current_location=101),
+        Bus(driver_id=drivers[2].id, bus_number="NBI-003", seat_capacity=30, current_location=102),
+        Bus(driver_id=drivers[0].id, bus_number="NBI-004", seat_capacity=45, current_location=103),
+    ]
+    db.session.add_all(buses)
     db.session.commit()
 
 # Seed Routes
@@ -170,75 +143,27 @@ def seed_products():
         # Fashion Hub - Clothes
         {'name': 'Casual Shirt', 'description': 'Comfortable casual shirt', 'price': 29.99, 'available_quantity': 50, 'stall_id': 1, 'created_at': datetime.utcnow(), 'location': 1, 'shop_name': 'Fashion Hub', 'image_url': 'https://example.com/images/casual_shirt.jpg'},
         {'name': 'Formal Suit', 'description': 'Stylish formal suit', 'price': 199.99, 'available_quantity': 30, 'stall_id': 1, 'created_at': datetime.utcnow(), 'location': 1, 'shop_name': 'Fashion Hub', 'image_url': 'https://example.com/images/formal_suit.jpg'},
-        {'name': 'Denim Jeans', 'description': 'Trendy denim jeans', 'price': 49.99, 'available_quantity': 60, 'stall_id': 1, 'created_at': datetime.utcnow(), 'location': 1, 'shop_name': 'Fashion Hub', 'image_url': 'https://example.com/images/denim_jeans.jpg'},
-        {'name': 'Summer Dress', 'description': 'Light and airy summer dress', 'price': 39.99, 'available_quantity': 40, 'stall_id': 1, 'created_at': datetime.utcnow(), 'location': 1, 'shop_name': 'Fashion Hub', 'image_url': 'https://example.com/images/summer_dress.jpg'},
-        {'name': 'Winter Jacket', 'description': 'Warm winter jacket', 'price': 149.99, 'available_quantity': 20, 'stall_id': 1, 'created_at': datetime.utcnow(), 'location': 1, 'shop_name': 'Fashion Hub', 'image_url': 'https://example.com/images/winter_jacket.jpg'},
-        {'name': 'Leather Jacket', 'description': 'Stylish leather jacket', 'price': 179.99, 'available_quantity': 15, 'stall_id': 1, 'created_at': datetime.utcnow(), 'location': 1, 'shop_name': 'Fashion Hub', 'image_url': 'https://example.com/images/leather_jacket.jpg'},
-        {'name': 'Turtleneck Sweater', 'description': 'Warm turtleneck sweater', 'price': 39.99, 'available_quantity': 25, 'stall_id': 1, 'created_at': datetime.utcnow(), 'location': 1, 'shop_name': 'Fashion Hub', 'image_url': 'https://example.com/images/turtleneck_sweater.jpg'},
-        {'name': 'Polo Shirt', 'description': 'Classic polo shirt', 'price': 34.99, 'available_quantity': 45, 'stall_id': 1, 'created_at': datetime.utcnow(), 'location': 1, 'shop_name': 'Fashion Hub', 'image_url': 'https://example.com/images/polo_shirt.jpg'},
-        {'name': 'Cardigan Sweater', 'description': 'Cozy cardigan sweater', 'price': 44.99, 'available_quantity': 20, 'stall_id': 1, 'created_at': datetime.utcnow(), 'location': 1, 'shop_name': 'Fashion Hub', 'image_url': 'https://example.com/images/cardigan_sweater.jpg'},
-        {'name': 'Cargo Pants', 'description': 'Durable cargo pants', 'price': 39.99, 'available_quantity': 30, 'stall_id': 1, 'created_at': datetime.utcnow(), 'location': 1, 'shop_name': 'Fashion Hub', 'image_url': 'https://example.com/images/cargo_pants.jpg'},
-
+        
         # Shoe Paradise - Shoes
         {'name': 'Running Shoes', 'description': 'Comfortable running shoes', 'price': 89.99, 'available_quantity': 40, 'stall_id': 2, 'created_at': datetime.utcnow(), 'location': 2, 'shop_name': 'Shoe Paradise', 'image_url': 'https://example.com/images/running_shoes.jpg'},
         {'name': 'Leather Boots', 'description': 'Durable leather boots', 'price': 129.99, 'available_quantity': 20, 'stall_id': 2, 'created_at': datetime.utcnow(), 'location': 2, 'shop_name': 'Shoe Paradise', 'image_url': 'https://example.com/images/leather_boots.jpg'},
-        {'name': 'High Heels', 'description': 'Elegant high heels', 'price': 99.99, 'available_quantity': 35, 'stall_id': 2, 'created_at': datetime.utcnow(), 'location': 2, 'shop_name': 'Shoe Paradise', 'image_url': 'https://example.com/images/high_heels.jpg'},
-        {'name': 'Sneakers', 'description': 'Stylish everyday sneakers', 'price': 79.99, 'available_quantity': 50, 'stall_id': 2, 'created_at': datetime.utcnow(), 'location': 2, 'shop_name': 'Shoe Paradise', 'image_url': 'https://example.com/images/sneakers.jpg'},
-        {'name': 'Sandals', 'description': 'Comfortable summer sandals', 'price': 49.99, 'available_quantity': 60, 'stall_id': 2, 'created_at': datetime.utcnow(), 'location': 2, 'shop_name': 'Shoe Paradise', 'image_url': 'https://example.com/images/sandals.jpg'},
-        {'name': 'Loafers', 'description': 'Casual leather loafers', 'price': 89.99, 'available_quantity': 25, 'stall_id': 2, 'created_at': datetime.utcnow(), 'location': 2, 'shop_name': 'Shoe Paradise', 'image_url': 'https://example.com/images/loafers.jpg'},
-        {'name': 'Chelsea Boots', 'description': 'Sleek Chelsea boots', 'price': 139.99, 'available_quantity': 15, 'stall_id': 2, 'created_at': datetime.utcnow(), 'location': 2, 'shop_name': 'Shoe Paradise', 'image_url': 'https://example.com/images/chelsea_boots.jpg'},
-        {'name': 'Flip Flops', 'description': 'Casual flip flops', 'price': 19.99, 'available_quantity': 70, 'stall_id': 2, 'created_at': datetime.utcnow(), 'location': 2, 'shop_name': 'Shoe Paradise', 'image_url': 'https://example.com/images/flip_flops.jpg'},
-        {'name': 'Oxford Shoes', 'description': 'Classic Oxford shoes', 'price': 109.99, 'available_quantity': 20, 'stall_id': 2, 'created_at': datetime.utcnow(), 'location': 2, 'shop_name': 'Shoe Paradise', 'image_url': 'https://example.com/images/oxford_shoes.jpg'},
-        {'name': 'Hiking Boots', 'description': 'Durable hiking boots', 'price': 149.99, 'available_quantity': 15, 'stall_id': 2, 'created_at': datetime.utcnow(), 'location': 2, 'shop_name': 'Shoe Paradise', 'image_url': 'https://example.com/images/hiking_boots.jpg'},
-
+        
         # Perfume Palace - Perfumes
         {'name': 'Chanel No. 5', 'description': 'Classic Chanel fragrance', 'price': 99.99, 'available_quantity': 25, 'stall_id': 3, 'created_at': datetime.utcnow(), 'location': 3, 'shop_name': 'Perfume Palace', 'image_url': 'https://example.com/images/chanel_no5.jpg'},
         {'name': 'Dior Sauvage', 'description': 'Masculine Dior fragrance', 'price': 79.99, 'available_quantity': 35, 'stall_id': 3, 'created_at': datetime.utcnow(), 'location': 3, 'shop_name': 'Perfume Palace', 'image_url': 'https://example.com/images/dior_sauvage.jpg'},
-        {'name': 'Gucci Bloom', 'description': 'Floral Gucci fragrance', 'price': 89.99, 'available_quantity': 30, 'stall_id': 3, 'created_at': datetime.utcnow(), 'location': 3, 'shop_name': 'Perfume Palace', 'image_url': 'https://example.com/images/gucci_bloom.jpg'},
-        {'name': 'YSL Black Opium', 'description': 'Bold YSL fragrance', 'price': 109.99, 'available_quantity': 20, 'stall_id': 3, 'created_at': datetime.utcnow(), 'location': 3, 'shop_name': 'Perfume Palace', 'image_url': 'https://example.com/images/ysl_black_opium.jpg'},
-        {'name': 'Versace Eros', 'description': 'Sensual Versace fragrance', 'price': 99.99, 'available_quantity': 25, 'stall_id': 3, 'created_at': datetime.utcnow(), 'location': 3, 'shop_name': 'Perfume Palace', 'image_url': 'https://example.com/images/versace_eros.jpg'},
-        {'name': 'Tom Ford Oud Wood', 'description': 'Luxurious Tom Ford fragrance', 'price': 149.99, 'available_quantity': 15, 'stall_id': 3, 'created_at': datetime.utcnow(), 'location': 3, 'shop_name': 'Perfume Palace', 'image_url': 'https://example.com/images/tom_ford_oud_wood.jpg'},
-        {'name': 'Creed Aventus', 'description': 'Iconic Creed fragrance', 'price': 199.99, 'available_quantity': 10, 'stall_id': 3, 'created_at': datetime.utcnow(), 'location': 3, 'shop_name': 'Perfume Palace', 'image_url': 'https://example.com/images/creed_aventus.jpg'},
-        {'name': 'Marc Jacobs Daisy', 'description': 'Light Marc Jacobs fragrance', 'price': 89.99, 'available_quantity': 30, 'stall_id': 3, 'created_at': datetime.utcnow(), 'location': 3, 'shop_name': 'Perfume Palace', 'image_url': 'https://example.com/images/marc_jacobs_daisy.jpg'},
-        {'name': 'Jo Malone Lime Basil & Mandarin', 'description': 'Citrus Jo Malone fragrance', 'price': 129.99, 'available_quantity': 15, 'stall_id': 3, 'created_at': datetime.utcnow(), 'location': 3, 'shop_name': 'Perfume Palace', 'image_url': 'https://example.com/images/jo_malone_lime_basil.jpg'},
-        {'name': 'Calvin Klein CK One', 'description': 'Fresh Calvin Klein fragrance', 'price': 69.99, 'available_quantity': 40, 'stall_id': 3, 'created_at': datetime.utcnow(), 'location': 3, 'shop_name': 'Perfume Palace', 'image_url': 'https://example.com/images/ck_one.jpg'},
-          # Electronics World - Electronics
+        
+        # Electronics World - Electronics
         {'name': 'Smartphone', 'description': 'Latest model smartphone', 'price': 699.99, 'available_quantity': 25, 'stall_id': 4, 'created_at': datetime.utcnow(), 'location': 4, 'shop_name': 'Electronics World', 'image_url': 'https://example.com/images/smartphone.jpg'},
         {'name': 'Laptop', 'description': 'High-performance laptop', 'price': 1099.99, 'available_quantity': 15, 'stall_id': 4, 'created_at': datetime.utcnow(), 'location': 4, 'shop_name': 'Electronics World', 'image_url': 'https://example.com/images/laptop.jpg'},
-        {'name': 'Smartwatch', 'description': 'Stylish smartwatch', 'price': 199.99, 'available_quantity': 30, 'stall_id': 4, 'created_at': datetime.utcnow(), 'location': 4, 'shop_name': 'Electronics World', 'image_url': 'https://example.com/images/smartwatch.jpg'},
-        {'name': 'Bluetooth Headphones', 'description': 'Noise-cancelling headphones', 'price': 149.99, 'available_quantity': 40, 'stall_id': 4, 'created_at': datetime.utcnow(), 'location': 4, 'shop_name': 'Electronics World', 'image_url': 'https://example.com/images/bluetooth_headphones.jpg'},
-        {'name': 'Gaming Console', 'description': 'Next-gen gaming console', 'price': 499.99, 'available_quantity': 10, 'stall_id': 4, 'created_at': datetime.utcnow(), 'location': 4, 'shop_name': 'Electronics World', 'image_url': 'https://example.com/images/gaming_console.jpg'},
-        {'name': '4K TV', 'description': 'Ultra HD 4K television', 'price': 899.99, 'available_quantity': 20, 'stall_id': 4, 'created_at': datetime.utcnow(), 'location': 4, 'shop_name': 'Electronics World', 'image_url': 'https://example.com/images/4k_tv.jpg'},
-        {'name': 'Wireless Earbuds', 'description': 'Compact wireless earbuds', 'price': 129.99, 'available_quantity': 50, 'stall_id': 4, 'created_at': datetime.utcnow(), 'location': 4, 'shop_name': 'Electronics World', 'image_url': 'https://example.com/images/wireless_earbuds.jpg'},
-        {'name': 'Tablet', 'description': 'Portable high-resolution tablet', 'price': 499.99, 'available_quantity': 30, 'stall_id': 4, 'created_at': datetime.utcnow(), 'location': 4, 'shop_name': 'Electronics World', 'image_url': 'https://example.com/images/tablet.jpg'},
-        {'name': 'Digital Camera', 'description': 'High-resolution digital camera', 'price': 749.99, 'available_quantity': 15, 'stall_id': 4, 'created_at': datetime.utcnow(), 'location': 4, 'shop_name': 'Electronics World', 'image_url': 'https://example.com/images/digital_camera.jpg'},
-        {'name': 'Home Theater System', 'description': 'Immersive home theater experience', 'price': 599.99, 'available_quantity': 10, 'stall_id': 4, 'created_at': datetime.utcnow(), 'location': 4, 'shop_name': 'Electronics World', 'image_url': 'https://example.com/images/home_theater.jpg'},
-
+        
         # Food Basket - Food
         {'name': 'Organic Apples', 'description': 'Fresh organic apples', 'price': 3.99, 'available_quantity': 100, 'stall_id': 5, 'created_at': datetime.utcnow(), 'location': 5, 'shop_name': 'Food Basket', 'image_url': 'https://example.com/images/organic_apples.jpg'},
         {'name': 'Granola Bars', 'description': 'Healthy granola bars', 'price': 5.99, 'available_quantity': 50, 'stall_id': 5, 'created_at': datetime.utcnow(), 'location': 5, 'shop_name': 'Food Basket', 'image_url': 'https://example.com/images/granola_bars.jpg'},
-        {'name': 'Almond Milk', 'description': 'Vegan almond milk', 'price': 4.99, 'available_quantity': 40, 'stall_id': 5, 'created_at': datetime.utcnow(), 'location': 5, 'shop_name': 'Food Basket', 'image_url': 'https://example.com/images/almond_milk.jpg'},
-        {'name': 'Quinoa', 'description': 'Healthy quinoa grains', 'price': 6.99, 'available_quantity': 60, 'stall_id': 5, 'created_at': datetime.utcnow(), 'location': 5, 'shop_name': 'Food Basket', 'image_url': 'https://example.com/images/quinoa.jpg'},
-        {'name': 'Organic Honey', 'description': 'Pure organic honey', 'price': 7.99, 'available_quantity': 35, 'stall_id': 5, 'created_at': datetime.utcnow(), 'location': 5, 'shop_name': 'Food Basket', 'image_url': 'https://example.com/images/organic_honey.jpg'},
-        {'name': 'Greek Yogurt', 'description': 'Creamy Greek yogurt', 'price': 3.49, 'available_quantity': 80, 'stall_id': 5, 'created_at': datetime.utcnow(), 'location': 5, 'shop_name': 'Food Basket', 'image_url': 'https://example.com/images/greek_yogurt.jpg'},
-        {'name': 'Avocado', 'description': 'Fresh avocados', 'price': 1.99, 'available_quantity': 120, 'stall_id': 5, 'created_at': datetime.utcnow(), 'location': 5, 'shop_name': 'Food Basket', 'image_url': 'https://example.com/images/avocado.jpg'},
-        {'name': 'Whole Grain Bread', 'description': 'Healthy whole grain bread', 'price': 2.99, 'available_quantity': 50, 'stall_id': 5, 'created_at': datetime.utcnow(), 'location': 5, 'shop_name': 'Food Basket', 'image_url': 'https://example.com/images/whole_grain_bread.jpg'},
-        {'name': 'Dark Chocolate', 'description': 'Rich dark chocolate', 'price': 3.99, 'available_quantity': 70, 'stall_id': 5, 'created_at': datetime.utcnow(), 'location': 5, 'shop_name': 'Food Basket', 'image_url': 'https://example.com/images/dark_chocolate.jpg'},
-        {'name': 'Kombucha', 'description': 'Refreshing kombucha drink', 'price': 3.49, 'available_quantity': 50, 'stall_id': 5, 'created_at': datetime.utcnow(), 'location': 5, 'shop_name': 'Food Basket', 'image_url': 'https://example.com/images/kombucha.jpg'},
-
+        
         # Jewel Collection - Jewelry
         {'name': 'Gold Necklace', 'description': 'Elegant gold necklace', 'price': 499.99, 'available_quantity': 5, 'stall_id': 6, 'created_at': datetime.utcnow(), 'location': 6, 'shop_name': 'Jewel Collection', 'image_url': 'https://example.com/images/gold_necklace.jpg'},
         {'name': 'Silver Bracelet', 'description': 'Beautiful silver bracelet', 'price': 199.99, 'available_quantity': 10, 'stall_id': 6, 'created_at': datetime.utcnow(), 'location': 6, 'shop_name': 'Jewel Collection', 'image_url': 'https://example.com/images/silver_bracelet.jpg'},
-        {'name': 'Diamond Ring', 'description': 'Stunning diamond ring', 'price': 999.99, 'available_quantity': 3, 'stall_id': 6, 'created_at': datetime.utcnow(), 'location': 6, 'shop_name': 'Jewel Collection', 'image_url': 'https://example.com/images/diamond_ring.jpg'},
-        {'name': 'Pearl Earrings', 'description': 'Classic pearl earrings', 'price': 299.99, 'available_quantity': 8, 'stall_id': 6, 'created_at': datetime.utcnow(), 'location': 6, 'shop_name': 'Jewel Collection', 'image_url': 'https://example.com/images/pearl_earrings.jpg'},
-        {'name': 'Ruby Pendant', 'description': 'Elegant ruby pendant', 'price': 799.99, 'available_quantity': 4, 'stall_id': 6, 'created_at': datetime.utcnow(), 'location': 6, 'shop_name': 'Jewel Collection', 'image_url': 'https://example.com/images/ruby_pendant.jpg'},
-        {'name': 'Gold Watch', 'description': 'Luxury gold watch', 'price': 1199.99, 'available_quantity': 2, 'stall_id': 6, 'created_at': datetime.utcnow(), 'location': 6, 'shop_name': 'Jewel Collection', 'image_url': 'https://example.com/images/gold_watch.jpg'},
-        {'name': 'Emerald Brooch', 'description': 'Vintage emerald brooch', 'price': 699.99, 'available_quantity': 3, 'stall_id': 6, 'created_at': datetime.utcnow(), 'location': 6, 'shop_name': 'Jewel Collection', 'image_url': 'https://example.com/images/emerald_brooch.jpg'},
-        {'name': 'Sapphire Cufflinks', 'description': 'Sophisticated sapphire cufflinks', 'price': 249.99, 'available_quantity': 6, 'stall_id': 6, 'created_at': datetime.utcnow(), 'location': 6, 'shop_name': 'Jewel Collection', 'image_url': 'https://example.com/images/sapphire_cufflinks.jpg'},
-        {'name': 'Platinum Band', 'description': 'Sleek platinum band', 'price': 599.99, 'available_quantity': 5, 'stall_id': 6, 'created_at': datetime.utcnow(), 'location': 6, 'shop_name': 'Jewel Collection', 'image_url': 'https://example.com/images/platinum_band.jpg'},
-        {'name': 'Opal Ring', 'description': 'Unique opal ring', 'price': 399.99, 'available_quantity': 4, 'stall_id': 6, 'created_at': datetime.utcnow(), 'location': 6, 'shop_name': 'Jewel Collection', 'image_url': 'https://example.com/images/opal_ring.jpg'},
     ]
-
     db.session.add_all([Product(**product) for product in products])
     db.session.commit()
 
@@ -247,8 +172,8 @@ def seed_products():
 def seed_orders():
     users = User.query.all()
     orders_data = [
-        {"user_id": users[0].id, "total_price": 299.97, "status": "completed", "payment_status": "paid"},
-        {"user_id": users[1].id, "total_price": 129.99, "status": "pending", "payment_status": "unpaid"},
+        {"user_id": users[0].id, "total_amount": 299.97, "status": "completed", "payment_status": "paid"},
+        {"user_id": users[1].id, "total_amount": 129.99, "status": "pending", "payment_status": "unpaid"},
     ]
     orders = [Order(**order_data, created_at=datetime.now(), updated_at=datetime.now()) for order_data in orders_data]
     db.session.add_all(orders)
@@ -327,55 +252,6 @@ def seed_payment():
     # Add payments to the database
     db.session.add_all(payments)
     db.session.commit()
-    
-def seed_sellers():
-    users = User.query.all()
-    
-    if not users:
-        raise ValueError("No users found. Please seed the users first.")
-
-    sellers = [
-        Seller(
-            user_id=users[0].id,  
-            shop_name='Trendy Apparel',
-            location='Sarit Center',  
-            contact_info='contact@trendyapparel.com, +254712345678',
-            created_at=datetime.utcnow()
-        ),
-        Seller(
-            user_id=users[1].id,  
-            shop_name='Gadget Corner',
-            location='Two Rivers Mall',  
-            contact_info='contact@gadgetcorner.com, +254723456789',
-            created_at=datetime.utcnow()
-        ),
-        Seller(
-            user_id=users[2].id,  
-            shop_name='Fragrance World',
-            location='Yaya Center',  
-            contact_info='contact@fragranceworld.com, +254734567890',
-            created_at=datetime.utcnow()
-        ),
-        Seller(
-            user_id=users[3].id,  
-            shop_name='Footwear Haven',
-            location='Westlands Mall',  
-            contact_info='contact@footwearhaven.com, +254745678901',
-            created_at=datetime.utcnow()
-        ),
-        Seller(
-            user_id=users[4].id,  
-            shop_name='Gourmet Delights',
-            location='Village Market', 
-            contact_info='contact@gourmetdelights.com, +254756789012',
-            created_at=datetime.utcnow()
-        ),
-        
-    ]
-
-    # Add sellers to the database
-    db.session.add_all(sellers)
-    db.session.commit()
 
     
     
@@ -424,7 +300,13 @@ def seed_stalls():
             location='Village Market',
             image_url='https://example.com/images/stall5.jpg'
         ),
-       
+        Stall(
+            seller_id=seller_ids[5],  # Replace with appropriate seller_id
+            stall_name='Jewelry Junction',
+            description='Elegant collection of beads and jewelry.',
+            location='The Junction',
+            image_url='https://example.com/images/stall6.jpg'
+        )
     ]
 
     # Add stalls to the database
@@ -469,11 +351,60 @@ def seed_passengers():
     db.session.add_all(passengers)
     db.session.commit()
     
+def seed_sellers():
+    users = User.query.all()
+    
+    if not users:
+        raise ValueError("No users found. Please seed the users first.")
+
+    sellers = [
+        Seller(
+            user_id=users[0].id,  
+            shop_name='Trendy Apparel',
+            location='Sarit Center',  
+            contact_info='contact@trendyapparel.com, +254712345678',
+            created_at=datetime.utcnow()
+        ),
+        Seller(
+            user_id=users[1].id,  
+            shop_name='Gadget Corner',
+            location='Two Rivers Mall',  
+            contact_info='contact@gadgetcorner.com, +254723456789',
+            created_at=datetime.utcnow()
+        ),
+        Seller(
+            user_id=users[2].id,  
+            shop_name='Fragrance World',
+            location='Yaya Center',  
+            contact_info='contact@fragranceworld.com, +254734567890',
+            created_at=datetime.utcnow()
+        ),
+        Seller(
+            user_id=users[3].id,  
+            shop_name='Footwear Haven',
+            location='Westlands Mall',  
+            contact_info='contact@footwearhaven.com, +254745678901',
+            created_at=datetime.utcnow()
+        ),
+        Seller(
+            user_id=users[4].id,  
+            shop_name='Gourmet Delights',
+            location='Village Market', 
+            contact_info='contact@gourmetdelights.com, +254756789012',
+            created_at=datetime.utcnow()
+        ),
+    ]
+
+    # Add sellers to the database
+    db.session.add_all(sellers)
+    db.session.commit()
+
+
+
 
 # Run all seed functions
-def  seed_db():
+def run_seed():
     seed_users()
-    seed_sellers()
     seed_stalls()
     seed_drivers()
     seed_buses()
@@ -487,11 +418,8 @@ def  seed_db():
     seed_comments()
     seed_reviews()
     seed_passengers()
-    
-    
-    
-    
-if __name__ == '__main__':
-    with app.app_context():
-        seed_db()
+    seed_sellers()
+
+if __name__ == "__main__":
+    run_seed()
     
