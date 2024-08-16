@@ -5,15 +5,14 @@ from model import Product, db
 class ProductResource(Resource):
     only = ('id', 'name', 'description', 'price', 'available_quantity', 'image_url', 'stall_id' , 'created_at', 'location', 'shop_name')
          
-    def get(self, product_id = None):
-        if product_id:
-            product = Product.query.get_or_404(product_id)
-            return product.to_dict(only= self.only), 200
-
+    def get(self, stall_name=None):
+        if stall_name:
+            products = Product.query.filter_by(stall_name=stall_name).all()
+            return [product.to_dict(only=self.only) for product in products], 200
         else:
             products = Product.query.all()
             return [product.to_dict(only=self.only) for product in products], 200
-        
+    
     
     def post(self):
         data = request.get_json()
