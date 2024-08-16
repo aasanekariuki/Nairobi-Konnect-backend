@@ -394,35 +394,35 @@ def seed_stalls():
             stall_name='Trendy Apparel',
             description='A stall offering the latest in fashion and accessories.',
             location='Sarit Center',
-            image_url='https://example.com/images/stall1.jpg'
+            image_url='https://i.pinimg.com/474x/2a/2a/b3/2a2ab349f8b7209fa1a9f194039204a9.jpg'
         ),
         Stall(
             seller_id=seller_ids[1],  # Replace with appropriate seller_id
             stall_name='Gadget Corner',
             description='Your go-to place for the latest electronics and gadgets.',
             location='Two Rivers Mall',
-            image_url='https://example.com/images/stall2.jpg'
+            image_url='hhttps://i.pinimg.com/236x/ae/36/75/ae367543511117be8542192617b4947a.jpg'
         ),
         Stall(
             seller_id=seller_ids[2],  # Replace with appropriate seller_id
             stall_name='Fragrance World',
             description='A stall specializing in perfumes and colognes from top brands.',
             location='Yaya Center',
-            image_url='https://example.com/images/stall3.jpg'
+            image_url='https://i.pinimg.com/474x/a0/e4/57/a0e457165a5b3afbd5c88fa8130224c7.jpg'
         ),
         Stall(
             seller_id=seller_ids[3],  # Replace with appropriate seller_id
             stall_name='Footwear Haven',
             description='A wide selection of shoes for every occasion.',
             location='Westlands Mall',
-            image_url='https://example.com/images/stall4.jpg'
+            image_url='https://i.pinimg.com/236x/b5/23/a4/b523a4aa3f91feb4be1916710dc7eed5.jpg'
         ),
         Stall(
             seller_id=seller_ids[4],  # Replace with appropriate seller_id
             stall_name='Gourmet Delights',
             description='Delicious food products and gourmet ingredients.',
             location='Village Market',
-            image_url='https://example.com/images/stall5.jpg'
+            image_url='https://i.pinimg.com/236x/05/27/b1/0527b176f9ba860d735e9912fa24b403.jpg'
         ),
        
     ]
