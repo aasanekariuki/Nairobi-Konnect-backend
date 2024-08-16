@@ -1,19 +1,22 @@
 import os
 from dotenv import load_dotenv
-from flask import request, jsonify, make_response
+from flask import request, Response
 from flask_restful import Resource
 import base64
 import requests
 from datetime import datetime, timedelta
 from model import db, Payment
 from flask_jwt_extended import jwt_required, get_jwt_identity
+import json
 
 # Global variable to store the token and its expiration
 token_info = {
     'token': None,
     'expires_at': None
 }
+
 load_dotenv()
+
 def create_token():
     consumer = os.getenv('CONSUMER_KEY')
     secret = os.getenv('SECRET_KEY')
@@ -32,6 +35,7 @@ def create_token():
         return True, None
     else:
         return False, response.text
+
 def get_token():
     if token_info['token'] is None or datetime.utcnow() >= token_info['expires_at']:
         success, error = create_token()
@@ -44,7 +48,8 @@ class StkPush(Resource):
     def post(self):
         token = get_token()
         if token is None:
-            return jsonify({'error': 'Failed to get token'}), 500
+            response_body = json.dumps({'error': 'Failed to get token'})
+            return Response(response=response_body, status=500, mimetype='application/json')
 
         request_data = request.get_json()
         phone = request_data.get('phone')
@@ -52,7 +57,8 @@ class StkPush(Resource):
         user_id = get_jwt_identity()
 
         if not phone or not amount:
-            return jsonify({'error': 'Phone number and amount are required'}), 400
+            response_body = json.dumps({'error': 'Phone number and amount are required'})
+            return Response(response=response_body, status=400, mimetype='application/json')
 
         phone = phone.lstrip('0') 
         short_code = 174379
@@ -74,7 +80,6 @@ class StkPush(Resource):
             'PhoneNumber': f"254{phone}",
             'CallBackURL': 'https://mydomain.com/path',
             'AccountReference': 'NairobiKonnect',
-            'TransactionDesc': 'Testing stk push'
         }
 
         headers = {
@@ -90,31 +95,22 @@ class StkPush(Resource):
 
             # Save payment to database
             try:
-                new_subscription = Subscription(
-                    user_id=user_id,
-                    payment_status='Paid',
-                    start_date=datetime.now(),
-                    end_date=datetime.now() + timedelta(days=30) 
-                )
-                db.session.add(new_subscription)
-                db.session.commit()  # Commit to get the subscription ID
-
                 new_payment = Payment(
                     user_id=user_id,
                     amount=amount,
                     transaction_id=transaction_id,
-                    status='completed',  # Set status to completed
-                    subscription_id=new_subscription.id  # Set subscription ID
+                    status='completed'  # Set status to completed
                 )
                 db.session.add(new_payment)
                 db.session.commit()
                 
-                return make_response(jsonify({'message': 'Payment completed successfully', 'transaction_id': transaction_id, 'subscription_id': new_subscription.id}), 200)
+                response_body = json.dumps({'message': 'Payment completed successfully', 'transaction_id': transaction_id})
+                return Response(response=response_body, status=200, mimetype='application/json')
             except Exception as e:
                 db.session.rollback()
-                return make_response(jsonify({'error': f'Failed to save payment or subscription to database: {str(e)}'}), 500)
+                response_body = json.dumps({'error': f'Failed to save payment to database: {str(e)}'})
+                return Response(response=response_body, status=500, mimetype='application/json')
         
         except requests.RequestException as e:
-            return make_response(jsonify({'error': f'Error with STK Push request: {str(e)}'}), 500)
-
-   
+            response_body = json.dumps({'error': f'Error with STK Push request: {str(e)}'})
+            return Response(response=response_body, status=500, mimetype='application/json')
