@@ -4,9 +4,10 @@ from model import db, Bus, Booking, Route, Schedule
 from datetime import datetime, time
 
 class BusResource(Resource):
+    only = ('id', 'driver_id', 'bus_number', 'seat_capacity', 'current_location', 'created_at', 'updated_at')
     def get(self):
         buses = Bus.query.all()
-        return [bus.to_dict() for bus in buses], 200
+        return [bus.to_dict(only=self.only) for bus in buses], 200
     
     def post(self):
         data = request.get_json()
