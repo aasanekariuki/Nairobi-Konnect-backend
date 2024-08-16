@@ -29,7 +29,7 @@ app.config['MAIL_USE_SSL'] = os.getenv('MAIL_USE_SSL') == 'True'
 db.init_app(app)
 mail = Mail(app)
 
-CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 migrate = Migrate(app, db, render_as_batch=True)
 
