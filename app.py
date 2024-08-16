@@ -48,6 +48,7 @@ from resources.auth import ForgotPasswordResource, ResetPasswordResource
 from resources.orders import OrderResource, OrderItemsResource
 from resources.payment import PaymentStatusResource
 from resources.stall import StallResource
+from resources.products import ProductResource
 
 from resources.mpesa import StkPush
 
@@ -68,6 +69,7 @@ api.add_resource(OrderResource, '/orders', '/orders/<int:order_id>')
 api.add_resource(OrderItemsResource, '/order_items', '/order_items/<int:order_item_id>')
 api.add_resource(PaymentStatusResource, '/payment_status/<string:transaction_id>')
 api.add_resource(StallResource, '/stalls', '/stalls/<int:stall_id>')
+api.add_resource(ProductResource, '/products', '/products/<int:product_id>')
 
 
 

@@ -3,13 +3,15 @@ from flask_restful import Resource
 from model import Stall, db
 
 class StallResource(Resource):
+    
+    only = ('id', 'stall_name', 'description', 'image_url', 'created_at', 'location',)
     def get(self, stall_id=None):
         if stall_id:
             stall = Stall.query.get_or_404(stall_id)
             return stall.to_dict(), 200
         else:
             stalls = Stall.query.all()
-            return [stall.to_dict() for stall in stalls], 200
+            return [stall.to_dict(only=self.only) for stall in stalls], 200
 
     def post(self):
         data = request.get_json()
