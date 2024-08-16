@@ -119,7 +119,7 @@ class Product(db.Model, SerializerMixin):
     stall_id = db.Column(db.Integer, db.ForeignKey('stalls.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     location = db.Column(db.Integer)
-    shop_name = db.Column(db.String, nullable=False)
+    stall_name = db.Column(db.String, nullable=False)
 
     # Relationships
     stall = db.relationship('Stall', back_populates='products')
@@ -189,7 +189,7 @@ class Seller(db.Model, SerializerMixin):
     __tablename__ = 'sellers'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    shop_name = db.Column(db.String, nullable=False)
+    stall_name = db.Column(db.String, nullable=False)
     location = db.Column(db.String, nullable=False)
     contact_info = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())

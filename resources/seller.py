@@ -25,7 +25,7 @@ class SellerResource(Resource):
                 product.description = data['description']
                 product.price = data['price']
                 product.available_quantity = data['available_quantity']
-                product.shop_name = data['shop_name']
+                product.stall_name = data['stall_name']
                 product.location = data['location']
             else:
                 product = Product(
@@ -34,7 +34,7 @@ class SellerResource(Resource):
                     price=data['price'],
                     available_quantity=data['available_quantity'],
                     artisan_id=user_id,
-                    shop_name=data['shop_name'],
+                    stall_name=data['stall_name'],
                     location=data['location']
                 )
                 db.session.add(product)

@@ -8,6 +8,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 class PassengerResource(Resource):
+    
     @jwt_required()
     def get(self):
         """View available buses and book tickets"""
