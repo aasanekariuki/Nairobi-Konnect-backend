@@ -40,7 +40,7 @@ from resources.driver import DriverResource
 from resources.passenger import PassengerResource
 from resources.seller import SellerResource
 from resources.buyer import BuyerResource
-from resources.auth import SignupResource, LoginResource, VerifyEmailResource
+from resources.auth import SignupResource, LoginResource
 from resources.profile import ProfileResource
 from resources.admin import AdminResource
 from resources.user import UserResource
@@ -62,7 +62,7 @@ api.add_resource(SellerResource, '/sellers')
 api.add_resource(BuyerResource, '/buyers')
 api.add_resource(SignupResource, '/signup')
 api.add_resource(LoginResource, '/login')
-api.add_resource(VerifyEmailResource, '/verify/<string:token>')
+# api.add_resource(VerifyEmailResource, '/verify/<string:token>')
 api.add_resource(ProfileResource, '/profile')
 api.add_resource(AdminResource, '/admin', '/admin/<int:user_id>')
 api.add_resource(UserResource, '/user')
