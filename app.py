@@ -18,7 +18,7 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=30)
 jwt_manager = JWTManager(app)
 
 #app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI') 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
@@ -47,6 +47,7 @@ from resources.user import UserResource
 from resources.auth import ForgotPasswordResource, ResetPasswordResource
 from resources.orders import OrderResource, OrderItemsResource
 from resources.payment import PaymentStatusResource
+from resources.stall import StallResource
 
 from resources.mpesa import StkPush
 
@@ -66,6 +67,8 @@ api.add_resource(ResetPasswordResource, '/reset-password')
 api.add_resource(OrderResource, '/orders', '/orders/<int:order_id>')
 api.add_resource(OrderItemsResource, '/order_items', '/order_items/<int:order_item_id>')
 api.add_resource(PaymentStatusResource, '/payment_status/<string:transaction_id>')
+api.add_resource(StallResource, '/stalls', '/stalls/<int:stall_id>')
+
 
 
 
