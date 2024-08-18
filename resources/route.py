@@ -1,4 +1,4 @@
-from flask import request
+from flask import request, jsonify
 from flask_restful import Resource
 from model import Route, db
 
@@ -14,14 +14,28 @@ class RouteResource(Resource):
 
     def post(self):
         data = request.get_json()
+
+        # Check for missing required fields
+        required_fields = ['origin', 'destination']
+        missing_fields = [field for field in required_fields if field not in data]
+
+        if missing_fields:
+            return jsonify({
+                'message': 'Missing required fields',
+                'missing_fields': missing_fields
+            }), 400
+
         new_route = Route(
             origin=data['origin'],
             destination=data['destination'],
-            description=data.get('description')
+            description=data.get('description')  # Optional field, so using get()
         )
+        
         db.session.add(new_route)
         db.session.commit()
-        return new_route.to_dict(), 201
+        
+        return jsonify(new_route.to_dict()), 201
+
 
     def put(self, route_id):
         route = Route.query.get_or_404(route_id)

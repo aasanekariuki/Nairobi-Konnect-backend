@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from flask import request, Response
+from flask import request, make_response, jsonify
 from flask_restful import Resource
 import base64
 import requests
@@ -30,16 +30,18 @@ def create_token():
 
     if response.status_code == 200:
         data = response.json()
-        token_info['token'] = data['access_token']
-        token_info['expires_at'] = datetime.utcnow() + timedelta(minutes=59)
+        token_info['token'] = data.get('access_token')
+        token_info['expires_at'] = datetime.utcnow() + timedelta(seconds=int(data.get('expires_in')))
         return True, None
     else:
+        print(f"Failed to create token: {response.text}")
         return False, response.text
 
 def get_token():
     if token_info['token'] is None or datetime.utcnow() >= token_info['expires_at']:
         success, error = create_token()
         if not success:
+            print(f"Error obtaining token: {error}")
             return None
     return token_info['token']
 
@@ -48,21 +50,35 @@ class StkPush(Resource):
     def post(self):
         token = get_token()
         if token is None:
-            response_body = json.dumps({'error': 'Failed to get token'})
-            return Response(response=response_body, status=500, mimetype='application/json')
+            return make_response(jsonify({'error': 'Failed to get token'}), 500)
 
         request_data = request.get_json()
+
+        # Log the incoming request data for debugging
+        print("Received data:", request_data)
+
         phone = request_data.get('phone')
         amount = request_data.get('amount')
         user_id = get_jwt_identity()
 
         if not phone or not amount:
-            response_body = json.dumps({'error': 'Phone number and amount are required'})
-            return Response(response=response_body, status=400, mimetype='application/json')
+            return make_response(jsonify({'error': 'Phone number and amount are required'}), 400)
 
-        phone = phone.lstrip('0') 
-        short_code = 174379
-        passkey = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'
+        # Validate the amount
+        try:
+            amount = int(amount)
+            if amount <= 0:
+                raise ValueError("Amount must be greater than 0")
+        except ValueError as e:
+            print(f"Amount validation error: {e}")
+            return make_response(jsonify({'error': 'Invalid amount provided. Amount must be a positive integer.'}), 400)
+
+        # Format phone number correctly
+        phone = phone.lstrip('0')
+        phone = f"254{phone}"
+
+        short_code = '174379'
+        passkey = os.getenv('PASSKEY')
         url = 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest'
 
         now = datetime.now()
@@ -75,42 +91,48 @@ class StkPush(Resource):
             'Timestamp': timestamp,
             'TransactionType': 'CustomerPayBillOnline',
             'Amount': amount,
-            'PartyA': f"254{phone}",
+            'PartyA': phone,
             'PartyB': short_code,
-            'PhoneNumber': f"254{phone}",
+            'PhoneNumber': phone,
             'CallBackURL': 'https://mydomain.com/path',
             'AccountReference': 'NairobiKonnect',
+            'TransactionDesc': 'Payment for NairobiKonnect services'
         }
 
         headers = {
-            'Authorization': f'Bearer {token}'
+            'Authorization': f'Bearer {token}',
+            'Content-Type': 'application/json'
         }
 
         try:
             response = requests.post(url, json=data, headers=headers)
-            response.raise_for_status()  # Raise an error for bad responses
+            if response.status_code != 200:
+                print(f"STK Push request failed with status code {response.status_code}")
+                print(f"Response content: {response.text}")
+                return make_response(jsonify({'error': 'Failed to process payment request. Please try again later.'}), 500)
 
             response_data = response.json()
             transaction_id = response_data.get('CheckoutRequestID')
 
-            # Save payment to database
+            # Save payment to the database
             try:
-                new_payment = Payment(
-                    user_id=user_id,
-                    amount=amount,
-                    transaction_id=transaction_id,
-                    status='completed'  # Set status to completed
-                )
-                db.session.add(new_payment)
-                db.session.commit()
-                
-                response_body = json.dumps({'message': 'Payment completed successfully', 'transaction_id': transaction_id})
-                return Response(response=response_body, status=200, mimetype='application/json')
+                # Uncomment and modify this block when integrating with your database
+                # new_payment = Payment(
+                #     user_id=user_id,
+                #     amount=amount,
+                #     transaction_id=transaction_id,
+                #     status='pending'  # Assuming status is pending until callback confirms
+                # )
+                # db.session.add(new_payment)
+                # db.session.commit()
+
+                return make_response(jsonify({'message': 'Payment initiated successfully', 'transaction_id': transaction_id}), 200)
+
             except Exception as e:
                 db.session.rollback()
-                response_body = json.dumps({'error': f'Failed to save payment to database: {str(e)}'})
-                return Response(response=response_body, status=500, mimetype='application/json')
-        
+                print(f"Database Error: {str(e)}")
+                return make_response(jsonify({'error': f'Failed to save payment or subscription to database: {str(e)}'}), 500)
+
         except requests.RequestException as e:
-            response_body = json.dumps({'error': f'Error with STK Push request: {str(e)}'})
-            return Response(response=response_body, status=500, mimetype='application/json')
+            print(f"RequestException: {str(e)}")
+            return make_response(jsonify({'error': f'Error with STK Push request: {str(e)}'}), 500)
