@@ -7,7 +7,7 @@ from app import db, app
 from faker import Faker
 from model import (
     User, Driver, Bus, Route, Schedule, Booking, Product, Order, OrderItem,
-    Comment, Review, Payment, Seller, Passenger, Stall
+    Comment, Review, Payment, Seller, Passenger, Stall, Ticket
 )
 from resources import user
 
@@ -84,9 +84,16 @@ seed_users()
 # Seed Drivers
 def seed_drivers():
     drivers = [
-        Driver(name="John Doe", email="john.doe@example.com", contact_info="+254700000001"),
-        Driver(name="Jane Smith", email="jane.smith@example.com", contact_info="+254700000002"),
-        Driver(name="Alex Johnson", email="alex.johnson@example.com", contact_info="+254700000003"),
+        Driver(name="Michael Scott", email="michael.scott@example.com", contact_info="+254700000004"),
+        Driver(name="Dwight Schrute", email="dwight.schrute@example.com", contact_info="+254700000005"),
+        Driver(name="Jim Halpert", email="jim.halpert@example.com", contact_info="+254700000006"),
+        Driver(name="Pam Beesly", email="pam.beesly@example.com", contact_info="+254700000007"),
+        Driver(name="Stanley Hudson", email="stanley.hudson@example.com", contact_info="+254700000008"),
+        Driver(name="Phyllis Vance", email="phyllis.vance@example.com", contact_info="+254700000009"),
+        Driver(name="Andy Bernard", email="andy.bernard@example.com", contact_info="+254700000010"),
+        Driver(name="Ryan Howard", email="ryan.howard@example.com", contact_info="+254700000011"),
+        Driver(name="Kelly Kapoor", email="kelly.kapoor@example.com", contact_info="+254700000012"),
+        Driver(name="Toby Flenderson", email="toby.flenderson@example.com", contact_info="+254700000013"),
     ]
     db.session.add_all(drivers)
     db.session.commit()
@@ -99,17 +106,17 @@ def seed_buses():
     bus_numbers = set()
     for _ in range(10):  # Adjust the range as needed
         while True:
-            # Generate a bus number in the format "NBI-XXX" where XXX is a random 3-digit number
-            bus_number = f"NBI-{faker.random_int(min=1, max=999):03}"
+            # Generate a bus number in the format "KAA-XXX" where XXX is a random 3-digit number
+            bus_number = f"KAA-{random.randint(100, 999)}"
             if bus_number not in bus_numbers:
                 bus_numbers.add(bus_number)
                 break
 
         new_bus = Bus(
-            driver_id=faker.random_int(min=1, max=10),
+            driver_id=random.randint(1, 10),
             bus_number=bus_number,
-            seat_capacity=faker.random_int(min=30, max=50),
-            current_location=faker.city()
+            seat_capacity=random.randint(30, 50),
+            current_location="Nairobi"
         )
         db.session.add(new_bus)
     
@@ -118,6 +125,7 @@ def seed_buses():
 # Seed Routes
 def seed_routes():
     routes_data = [
+        # Original routes
         {"origin": "CBD", "destination": "Westlands", "description": "Route from Nairobi Central Business District to Westlands"},
         {"origin": "CBD", "destination": "Kilimani", "description": "Route from Nairobi Central Business District to Kilimani"},
         {"origin": "CBD", "destination": "Kibera", "description": "Route from Nairobi Central Business District to Kibera"},
@@ -128,7 +136,20 @@ def seed_routes():
         {"origin": "CBD", "destination": "Embakasi", "description": "Route from Nairobi Central Business District to Embakasi"},
         {"origin": "CBD", "destination": "Thika", "description": "Route from Nairobi Central Business District to Thika"},
         {"origin": "CBD", "destination": "Gikambura", "description": "Route from Nairobi Central Business District to Gikambura in Kikuyu"},
+
+        # Additional useful routes
+        {"origin": "CBD", "destination": "Mombasa Road", "description": "Route from Nairobi Central Business District to Mombasa Road"},
+        {"origin": "CBD", "destination": "Jomo Kenyatta International Airport", "description": "Route from Nairobi Central Business District to JKIA"},
+        {"origin": "CBD", "destination": "Ruaka", "description": "Route from Nairobi Central Business District to Ruaka"},
+        {"origin": "CBD", "destination": "Muthaiga", "description": "Route from Nairobi Central Business District to Muthaiga"},
+        {"origin": "CBD", "destination": "Kasarani", "description": "Route from Nairobi Central Business District to Kasarani"},
+        {"origin": "CBD", "destination": "Kikuyu", "description": "Route from Nairobi Central Business District to Kikuyu"},
+        {"origin": "CBD", "destination": "Ruiru", "description": "Route from Nairobi Central Business District to Ruiru"},
+        {"origin": "CBD", "destination": "Juja", "description": "Route from Nairobi Central Business District to Juja"},
+        {"origin": "CBD", "destination": "Syokimau", "description": "Route from Nairobi Central Business District to Syokimau"},
+        {"origin": "CBD", "destination": "Kitengela", "description": "Route from Nairobi Central Business District to Kitengela"},
     ]
+
     routes = [Route(**route_data, created_at=datetime.now(), updated_at=datetime.now()) for route_data in routes_data]
     db.session.add_all(routes)
     db.session.commit()
@@ -137,18 +158,55 @@ def seed_routes():
 def seed_schedules():
     buses = Bus.query.all()
     routes = Route.query.all()
+
+    if len(buses) < 5 or len(routes) < 5:
+        raise ValueError("Not enough buses or routes in the database to seed schedules.")
+
     schedules_data = [
         {"bus_id": buses[0].id, "route_id": routes[0].id, "departure_time": time(7, 30), "arrival_time": time(8, 15), "date": date(2024, 8, 15), "available_seats": 40},
         {"bus_id": buses[1].id, "route_id": routes[1].id, "departure_time": time(8, 00), "arrival_time": time(8, 45), "date": date(2024, 8, 15), "available_seats": 35},
         {"bus_id": buses[2].id, "route_id": routes[2].id, "departure_time": time(8, 30), "arrival_time": time(9, 15), "date": date(2024, 8, 15), "available_seats": 30},
         {"bus_id": buses[3].id, "route_id": routes[3].id, "departure_time": time(9, 00), "arrival_time": time(9, 45), "date": date(2024, 8, 15), "available_seats": 50},
         {"bus_id": buses[4].id, "route_id": routes[4].id, "departure_time": time(9, 00), "arrival_time": time(9, 50), "date": date(2024, 8, 15), "available_seats": 40},
-        
+
+        # Additional schedules for diversity
+        {"bus_id": buses[0].id, "route_id": routes[5].id, "departure_time": time(10, 00), "arrival_time": time(10, 45), "date": date(2024, 8, 15), "available_seats": 35},
+        {"bus_id": buses[1].id, "route_id": routes[6].id, "departure_time": time(10, 30), "arrival_time": time(11, 15), "date": date(2024, 8, 15), "available_seats": 30},
+        {"bus_id": buses[2].id, "route_id": routes[7].id, "departure_time": time(11, 00), "arrival_time": time(11, 50), "date": date(2024, 8, 15), "available_seats": 45},
+        {"bus_id": buses[3].id, "route_id": routes[8].id, "departure_time": time(11, 30), "arrival_time": time(12, 15), "date": date(2024, 8, 15), "available_seats": 40},
+        {"bus_id": buses[4].id, "route_id": routes[9].id, "departure_time": time(12, 00), "arrival_time": time(12, 50), "date": date(2024, 8, 15), "available_seats": 50},
+
+        # More schedules for variety
+        {"bus_id": buses[0].id, "route_id": routes[0].id, "departure_time": time(13, 00), "arrival_time": time(13, 45), "date": date(2024, 8, 15), "available_seats": 30},
+        {"bus_id": buses[1].id, "route_id": routes[1].id, "departure_time": time(14, 00), "arrival_time": time(14, 50), "date": date(2024, 8, 15), "available_seats": 40},
     ]
+
     schedules = [Schedule(**schedule_data, created_at=datetime.now(), updated_at=datetime.now()) for schedule_data in schedules_data]
     db.session.add_all(schedules)
     db.session.commit()
+    
+def seed_tickets():
+    tickets = [
+        {'route_id': 1, 'passenger_id': 101, 'seat_number': 'A1'},
+        {'route_id': 1, 'passenger_id': 102, 'seat_number': 'A2'},
+        {'route_id': 1, 'passenger_id': 103, 'seat_number': 'A3'},
+        {'route_id': 2, 'passenger_id': 104, 'seat_number': 'B1'},
+        {'route_id': 2, 'passenger_id': 105, 'seat_number': 'B2'},
+        {'route_id': 2, 'passenger_id': 106, 'seat_number': 'B3'},
+        {'route_id': 3, 'passenger_id': 107, 'seat_number': 'C1'},
+        {'route_id': 3, 'passenger_id': 108, 'seat_number': 'C2'},
+        {'route_id': 3, 'passenger_id': 109, 'seat_number': 'C3'},
+        {'route_id': 4, 'passenger_id': 110, 'seat_number': 'D1'},
+        {'route_id': 4, 'passenger_id': 111, 'seat_number': 'D2'},
+        {'route_id': 4, 'passenger_id': 112, 'seat_number': 'D3'},
+        {'route_id': 5, 'passenger_id': 113, 'seat_number': 'E1'},
+        {'route_id': 5, 'passenger_id': 114, 'seat_number': 'E2'},
+        {'route_id': 5, 'passenger_id': 115, 'seat_number': 'E3'},
+    ]
 
+    db.session.add_all([Ticket(**ticket) for ticket in tickets])
+    db.session.commit()
+    
 # Seed Bookings
 def seed_bookings():
     users = User.query.all()
@@ -247,8 +305,8 @@ def seed_products():
 def seed_orders():
     users = User.query.all()
     orders_data = [
-        {"user_id": users[0].id, "total_price": 299.97, "status": "completed", "payment_status": "paid"},
-        {"user_id": users[1].id, "total_price": 129.99, "status": "pending", "payment_status": "unpaid"},
+        {"user_id": users[0].id, "total_price": 299.97, "status": "completed"},
+        {"user_id": users[1].id, "total_price": 129.99, "status": "pending"},
     ]
     orders = [Order(**order_data, created_at=datetime.now(), updated_at=datetime.now()) for order_data in orders_data]
     db.session.add_all(orders)
@@ -478,6 +536,8 @@ def  seed_db():
     seed_drivers()
     seed_buses()
     seed_routes()
+    seed_tickets()
+    seed_passengers()
     seed_schedules()
     seed_bookings()
     seed_products()
@@ -486,7 +546,6 @@ def  seed_db():
     seed_payments()
     seed_comments()
     seed_reviews()
-    seed_passengers()
     
     
     

@@ -52,11 +52,14 @@ from resources.products import ProductResource
 from resources.route import RouteResource
 from resources.buses import BusResource
 from resources.schedule import ScheduleResource
+from resources.bookings import BookingResource
+from resources.tickets import TicketResource
 
 from resources.mpesa import StkPush
 
 api.add_resource(StkPush, '/stk_push')
-api.add_resource(DriverResource, '/drivers')
+api.add_resource(DriverResource, '/drivers', '/drivers/<int:driver_id>')
+api.add_resource(TicketResource, '/tickets', '/tickets/<int:ticket_id>', '/drivers/<int:driver_id>/tickets')
 api.add_resource(PassengerResource, '/passengers')
 api.add_resource(SellerResource, '/sellers')
 api.add_resource(BuyerResource, '/buyers')
@@ -76,6 +79,7 @@ api.add_resource(ProductResource, '/products', '/products/<string:stall_name>')
 api.add_resource(RouteResource, '/routes', '/routes/<int:route_id>')
 api.add_resource(BusResource, '/buses', '/buses/<int:bus_id>')
 api.add_resource(ScheduleResource, '/schedules', '/schedules/<int:schedule_id>')
+api.add_resource(BookingResource, '/bookings', '/bookings/<int:booking_id>')
 
 
 
