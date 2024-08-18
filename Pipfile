@@ -27,6 +27,7 @@ werkzeug = "*"
 idna = "*"
 charset-normalizer = "*"
 flask-uploads = "*"
+flask-marshmallow = "*"
 
 [dev-packages]
 

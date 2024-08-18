@@ -3,7 +3,7 @@ from flask_restful import Resource
 from model import Route, db
 
 class RouteResource(Resource):
-    only = ('id', 'origin', 'description', 'created_at', 'updated_at',)
+    only = ('id', 'origin', 'destination','description', 'created_at', 'updated_at',)
     def get(self, route_id=None):
         if route_id:
             route = Route.query.get_or_404(route_id)

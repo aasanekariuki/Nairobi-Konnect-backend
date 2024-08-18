@@ -4,7 +4,7 @@ import json
 from model import Product, Stall, db
 
 class ProductResource(Resource):
-    only = ('id', 'name', 'description', 'price', 'available_quantity', 'image_url', 'stall_id', 'created_at', 'location')
+    only = ('id', 'name', 'description', 'price', 'available_quantity', 'sold_quantity', 'image_url', 'stall_id', 'created_at', 'location')
 
     def get(self, stall_name=None):
         if stall_name:
@@ -26,7 +26,6 @@ class ProductResource(Resource):
             
             # Convert to JSON and return response
             return Response(json.dumps(products_list), status=200, mimetype='application/json')
-
     def post(self):
         data = request.get_json()
         stall = Stall.query.filter_by(stall_name=data['shop_name']).first()
